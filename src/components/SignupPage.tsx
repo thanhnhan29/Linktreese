@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import svgPaths from "../imports/svg-du8004kdwc";
 
+// interface SignupPageProps {
+//   onSignup: (email: string, password: string) => void;
+//   onSwitchToLogin: () => void;
+// }
+
 interface SignupPageProps {
-  onSignup: (email: string, password: string) => void;
+  // Update return type to Promise<void> or Promise<any>
+  onSignup: (email: string, password: string) => Promise<any>;
   onSwitchToLogin: () => void;
 }
 
@@ -78,27 +84,23 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Clear all errors first
     let hasError = false;
 
-    // Validate email
+    // 1. Validate Email
     if (!email) {
       setEmailError('Email is required');
       hasError = true;
     } else if (!validateEmail(email)) {
       setEmailError('Please enter a valid email address');
       hasError = true;
-    } else if (EXISTING_EMAILS.includes(email)) {
-      setEmailError('This email is already registered');
-      hasError = true;
     } else {
       setEmailError('');
     }
 
-    // Validate password
+    // 2. Validate Password
     if (!password) {
       setPasswordError('Password is required');
       hasError = true;
@@ -112,7 +114,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
       }
     }
 
-    // Validate confirm password
+    // 3. Validate Confirm Password
     if (!confirmPassword) {
       setConfirmPasswordError('Please confirm your password');
       hasError = true;
@@ -123,17 +125,30 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
       setConfirmPasswordError('');
     }
 
-    if (hasError) {
-      return;
-    }
+    if (hasError) return;
 
-    onSignup(email, password);
+    // 4. Attempt Signup
+    try {
+      await onSignup(email, password);
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        setEmailError('This email is already registered');
+      } else {
+        setEmailError('Failed to sign up. Please try again.');
+      }
+    }
   };
 
-  const handleGoogleSignup = () => {
-    // Placeholder for Google OAuth integration
-    // In production, this would redirect to Google OAuth or open a popup
-    alert('Google OAuth integration would happen here. This is a demo.');
+  // Temporary handler for Google signup button to avoid runtime errors.
+  // Implement real Google signup flow (signInWithPopup + GoogleAuthProvider)
+  // later when Firebase auth UI is wired up.
+  const handleGoogleSignup = async () => {
+    try {
+      console.log('Google signup clicked');
+      // TODO: implement Google sign-up
+    } catch (err) {
+      console.error('Google signup failed', err);
+    }
   };
 
   return (

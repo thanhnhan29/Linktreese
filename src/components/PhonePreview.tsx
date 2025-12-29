@@ -56,10 +56,14 @@ const trackLinkClick = (username: string, linkId: string, linkTitle: string) => 
     timestamp: Date.now()
   };
   
-  const savedClicks = localStorage.getItem(`analytics_${username}`);
-  const clicks = savedClicks ? JSON.parse(savedClicks) : [];
-  clicks.push(clickData);
-  localStorage.setItem(`analytics_${username}`, JSON.stringify(clicks));
+  try {
+    const savedClicks = localStorage.getItem(`analytics_${username}`);
+    const clicks = savedClicks ? JSON.parse(savedClicks) : [];
+    clicks.push(clickData);
+    localStorage.setItem(`analytics_${username}`, JSON.stringify(clicks));
+  } catch (e) {
+    console.error('Error tracking click', e);
+  }
 };
 
 export default function PhonePreview({ username, name, bio, profileImage, links, appearanceConfig, hideVielinkLogo, blocks = [] }: PhonePreviewProps) {
@@ -69,14 +73,16 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
 
   // Get background styles
   const getBackgroundStyle = () => {
-    if (!appearanceConfig) return { backgroundColor: '#ffffff' };
+    // FIX: Kiểm tra kỹ nếu không có background object
+    if (!appearanceConfig || !appearanceConfig.background) {
+        return { backgroundColor: '#ffffff' };
+    }
 
     const { background } = appearanceConfig;
     
     if (background.type === 'solid') {
-      return { backgroundColor: background.solidColor };
+      return { backgroundColor: background.solidColor || '#ffffff' };
     } else if (background.type === 'gradient') {
-      // Convert Tailwind direction to CSS gradient direction
       const directionMap: Record<string, string> = {
         'to-b': 'to bottom',
         'to-t': 'to top',
@@ -87,7 +93,7 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
       };
       const direction = directionMap[background.gradientDirection] || 'to bottom';
       return {
-        background: `linear-gradient(${direction}, ${background.gradientStart}, ${background.gradientEnd})`
+        background: `linear-gradient(${direction}, ${background.gradientStart || '#ffffff'}, ${background.gradientEnd || '#ffffff'})`
       };
     } else if (background.type === 'image' && background.imageUrl) {
       return {
@@ -103,7 +109,8 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
 
   // Get button styles
   const getButtonStyle = (link: Link) => {
-    if (!appearanceConfig) {
+    // FIX: Kiểm tra kỹ nếu không có buttons object
+    if (!appearanceConfig || !appearanceConfig.buttons) {
       return {
         backgroundColor: 'white',
         border: '2px solid black',
@@ -117,9 +124,9 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
     const borderRadius = buttons.style === 'rounded' ? '8px' : buttons.style === 'square' ? '0px' : '50px';
     
     return {
-      backgroundColor: buttons.backgroundColor,
-      color: buttons.textColor,
-      border: `2px solid ${buttons.borderColor}`,
+      backgroundColor: buttons.backgroundColor || '#ffffff',
+      color: buttons.textColor || '#000000',
+      border: `2px solid ${buttons.borderColor || '#000000'}`,
       borderRadius,
       boxShadow: buttons.hasShadow ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none'
     };
@@ -127,7 +134,8 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
 
   // Get font styles
   const getFontFamily = (type: 'heading' | 'body') => {
-    if (!appearanceConfig) return 'Inter, sans-serif';
+    // FIX: Kiểm tra kỹ nếu không có fonts object
+    if (!appearanceConfig || !appearanceConfig.fonts) return 'Inter, sans-serif';
     return `${appearanceConfig.fonts[type]}, sans-serif`;
   };
 
@@ -197,7 +205,7 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
                   <img src={profileImage} alt={name} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-[#676b5f]" style={{ fontFamily: getFontFamily('heading') }}>
-                    {name[0]?.toUpperCase()}
+                    {name ? name[0]?.toUpperCase() : '?'}
                   </span>
                 )}
               </div>

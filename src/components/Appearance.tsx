@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Palette, Type, Square, Upload, Sparkles, Paintbrush } from 'lucide-react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
-import { toast } from 'sonner@2.0.3onner@2.0.3';
+import { toast } from 'sonner';
 
 interface AppearanceConfig {
   background: {

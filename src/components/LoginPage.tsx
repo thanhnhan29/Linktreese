@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import svgPaths from "../imports/svg-du8004kdwc";
 
+// interface LoginPageProps {
+//   onLogin: (username: string, password: string) => boolean;
+//   onSwitchToSignup: () => void;
+//   onSwitchToForgotPassword: () => void;
+// }
+
 interface LoginPageProps {
-  onLogin: (username: string, password: string) => boolean;
+  // Update the return type to Promise<boolean>
+  onLogin: (username: string, password: string) => Promise<boolean>; 
   onSwitchToSignup: () => void;
   onSwitchToForgotPassword: () => void;
 }
+
 
 export default function LoginPage({ onLogin, onSwitchToSignup, onSwitchToForgotPassword }: LoginPageProps) {
   const [email, setEmail] = useState('');
@@ -13,8 +21,8 @@ export default function LoginPage({ onLogin, onSwitchToSignup, onSwitchToForgotP
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const VALID_EMAIL = 'abc@gmail.com';
-  const VALID_PASSWORD = 'Hihi34@';
+  // const VALID_EMAIL = 'abc@gmail.com';
+  // const VALID_PASSWORD = 'Hihi34@';
 
   const handleEmailChange = (value: string) => {
     setEmail(value);
@@ -28,42 +36,31 @@ export default function LoginPage({ onLogin, onSwitchToSignup, onSwitchToForgotP
     if (passwordError) setPasswordError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Clear previous errors
     setEmailError('');
     setPasswordError('');
     
-    let hasError = false;
-
-    // Validate if fields are empty
+    // Basic validation
     if (!email) {
       setEmailError('Email is required');
-      hasError = true;
+      return;
     }
-
     if (!password) {
       setPasswordError('Password is required');
-      hasError = true;
-    }
-
-    // If both fields are filled, check credentials
-    if (!hasError) {
-      if (email !== VALID_EMAIL || password !== VALID_PASSWORD) {
-        // Show generic error on both fields
-        setEmailError('Incorrect email or password');
-        setPasswordError('Incorrect email or password');
-        hasError = true;
-      }
-    }
-
-    if (hasError) {
       return;
     }
 
-    // If validation passes, call onLogin
-    onLogin(email, password);
+    // Attempt Login
+    try {
+      await onLogin(email, password);
+    } catch (error) {
+      // If Firebase fails, show error on both fields
+      setEmailError('Incorrect email or password');
+      setPasswordError('Incorrect email or password');
+    }
   };
 
   const handleGoogleLogin = () => {
