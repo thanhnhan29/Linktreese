@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUser as createUserDoc, createBioPage } from './lib/firestoreSchemas';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
@@ -12,6 +16,7 @@ type Page = 'login' | 'signup' | 'dashboard' | 'forgot-password' | 'reset-passwo
 interface User {
   email: string;
   password: string;
+  uid: string;
 }
 
 interface BioPage {
@@ -27,138 +32,236 @@ export default function App() {
   const [currentBioPage, setCurrentBioPage] = useState<string>('');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
 
-  useEffect(() => {
-    // Check if user is logged in
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      setUser(userData);
-      
-      // Check if user has bio pages
-      const bioPages = JSON.parse(localStorage.getItem(`bioPages_${userData.email}`) || '[]');
-      
-      if (bioPages.length === 0) {
-        // First time user - need to create username
-        setCurrentPage('create-username');
-        setIsFirstTimeUser(true);
-      } else {
-        // Get current active bio page
-        const activeBioPage = localStorage.getItem(`currentBioPage_${userData.email}`);
-        setCurrentBioPage(activeBioPage || bioPages[0].username);
-        setCurrentPage('dashboard');
-      }
-    }
-  }, []);
-
-  const handleLogin = (identifier: string, password: string) => {
-    // Demo user - can login with username or email
-    const DEMO_USERNAME = 'NTK_Harry';
-    const DEMO_EMAIL = 'abc@gmail.com';
-    const DEMO_PASSWORD = 'Hihi34@';
-    
-    if ((identifier === DEMO_USERNAME || identifier === DEMO_EMAIL) && password === DEMO_PASSWORD) {
-      const user: User = { email: DEMO_EMAIL, password: DEMO_PASSWORD };
-      setUser(user);
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      
-      // Check if demo user has bio pages
-      const bioPages = JSON.parse(localStorage.getItem(`bioPages_${DEMO_EMAIL}`) || '[]');
-      
-      if (bioPages.length === 0) {
-        // Create demo bio page for NTK_Harry
-        const demoBioPage: BioPage = {
-          username: DEMO_USERNAME,
-          profileImage: '',
-          bio: '',
-          displayName: DEMO_USERNAME
-        };
-        localStorage.setItem(`bioPages_${DEMO_EMAIL}`, JSON.stringify([demoBioPage]));
-        localStorage.setItem(`currentBioPage_${DEMO_EMAIL}`, DEMO_USERNAME);
-        setCurrentBioPage(DEMO_USERNAME);
-      } else {
-        const activeBioPage = localStorage.getItem(`currentBioPage_${DEMO_EMAIL}`);
-        setCurrentBioPage(activeBioPage || bioPages[0].username);
-      }
-      
-      setCurrentPage('dashboard');
-      return true;
-    }
-    
-    // Check for other registered users
-    const userKey = `user_${identifier}`;
-    const savedUserData = localStorage.getItem(userKey);
-    
-    if (savedUserData) {
-      const userData = JSON.parse(savedUserData);
-      if (userData.password === password) {
-        const user: User = { email: userData.email, password: userData.password };
-        setUser(user);
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        
-        // Get bio pages
-        const bioPages = JSON.parse(localStorage.getItem(`bioPages_${userData.email}`) || '[]');
-        
-        if (bioPages.length === 0) {
-          setCurrentPage('create-username');
-          setIsFirstTimeUser(true);
-        } else {
-          const activeBioPage = localStorage.getItem(`currentBioPage_${userData.email}`);
-          setCurrentBioPage(activeBioPage || bioPages[0].username);
-          setCurrentPage('dashboard');
+  // Clear app-specific localStorage keys to avoid stale local state persisting across runs.
+  const clearAppLocalStorage = () => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (
+          k === 'currentUser' ||
+          k.startsWith('bioPages_') ||
+          k.startsWith('currentBioPage_') ||
+          k.startsWith('user_')
+        ) {
+          keysToRemove.push(k);
         }
-        
-        return true;
       }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (err) {
+      // ignore in environments without localStorage
     }
-    
-    return false;
   };
 
-  const handleSignup = (email: string, password: string) => {
-    // Check if email already exists
-    const existingUser = localStorage.getItem(`user_${email}`);
-    if (existingUser) {
-      return false;
-    }
+  // useEffect(() => {
+  //   // Check if user is logged in
+  //   const savedUser = localStorage.getItem('currentUser');
+  //   if (savedUser) {
+  //     const userData = JSON.parse(savedUser);
+  //     setUser(userData);
+      
+  //     // Check if user has bio pages
+  //     const bioPages = JSON.parse(localStorage.getItem(`bioPages_${userData.email}`) || '[]');
+      
+  //     if (bioPages.length === 0) {
+  //       // First time user - need to create username
+  //       setCurrentPage('create-username');
+  //       setIsFirstTimeUser(true);
+  //     } else {
+  //       // Get current active bio page
+  //       const activeBioPage = localStorage.getItem(`currentBioPage_${userData.email}`);
+  //       setCurrentBioPage(activeBioPage || bioPages[0].username);
+  //       setCurrentPage('dashboard');
+  //     }
+  //   }
+  // }, []);
+  useEffect(() => {
+    let unsubscribeFn: (() => void) | null = null;
 
-    const newUser: User = { email, password };
-    
-    // Save user credentials
-    localStorage.setItem(`user_${email}`, JSON.stringify(newUser));
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    
-    // Initialize empty bio pages array
-    localStorage.setItem(`bioPages_${email}`, JSON.stringify([]));
-    
-    setUser(newUser);
-    setIsFirstTimeUser(true);
-    setCurrentPage('create-username');
-  };
+    const initAuth = async () => {
+      // Clear localStorage cũ nếu muốn (tùy chọn)
+      clearAppLocalStorage(); 
 
-  const handleCreateUsername = (username: string) => {
-    if (!user) return;
+      unsubscribeFn = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser && firebaseUser.email) {
+          // Lưu thông tin user bao gồm cả UID
+          const userData: User = { 
+            email: firebaseUser.email, 
+            uid: firebaseUser.uid 
+          };
+          setUser(userData);
 
-    // Create new bio page
-    const newBioPage: BioPage = {
-      username,
-      profileImage: '',
-      bio: '',
-      displayName: username
+          // --- LOGIC MỚI: KIỂM TRA FIRESTORE ---
+          try {
+            // Tìm xem user này đã có Bio Page nào chưa
+            const q = query(
+              collection(db, 'bio_pages'), 
+              where('userId', '==', firebaseUser.uid)
+            );
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+              // Nếu đã có trang -> Vào thẳng Dashboard
+              const data = snapshot.docs[0].data();
+              setCurrentBioPage(data.username);
+              setCurrentPage('dashboard');
+            } else {
+              // Nếu chưa có -> Chuyển sang trang tạo Username
+              setCurrentPage('create-username');
+              setIsFirstTimeUser(true);
+            }
+          } catch (err) {
+            console.error("Lỗi khi tải dữ liệu từ Firestore:", err);
+          }
+        } else {
+          setUser(null);
+          setCurrentPage('login');
+        }
+      });
     };
 
-    // Get existing bio pages
-    const bioPages = JSON.parse(localStorage.getItem(`bioPages_${user.email}`) || '[]');
+    initAuth();
+
+    return () => {
+      if (unsubscribeFn) unsubscribeFn();
+    };
+  }, []);
+
+  // const handleLogin = (identifier: string, password: string) => {
+  //   // Demo user - can login with username or email
+  //   const DEMO_USERNAME = 'NTK_Harry';
+  //   const DEMO_EMAIL = 'abc@gmail.com';
+  //   const DEMO_PASSWORD = 'Hihi34@';
     
-    // Add new bio page
-    bioPages.push(newBioPage);
-    localStorage.setItem(`bioPages_${user.email}`, JSON.stringify(bioPages));
+  //   if ((identifier === DEMO_USERNAME || identifier === DEMO_EMAIL) && password === DEMO_PASSWORD) {
+  //     const user: User = { email: DEMO_EMAIL, password: DEMO_PASSWORD };
+  //     setUser(user);
+  //     localStorage.setItem('currentUser', JSON.stringify(user));
+      
+  //     // Check if demo user has bio pages
+  //     const bioPages = JSON.parse(localStorage.getItem(`bioPages_${DEMO_EMAIL}`) || '[]');
+      
+  //     if (bioPages.length === 0) {
+  //       // Create demo bio page for NTK_Harry
+  //       const demoBioPage: BioPage = {
+  //         username: DEMO_USERNAME,
+  //         profileImage: '',
+  //         bio: '',
+  //         displayName: DEMO_USERNAME
+  //       };
+  //       localStorage.setItem(`bioPages_${DEMO_EMAIL}`, JSON.stringify([demoBioPage]));
+  //       localStorage.setItem(`currentBioPage_${DEMO_EMAIL}`, DEMO_USERNAME);
+  //       setCurrentBioPage(DEMO_USERNAME);
+  //     } else {
+  //       const activeBioPage = localStorage.getItem(`currentBioPage_${DEMO_EMAIL}`);
+  //       setCurrentBioPage(activeBioPage || bioPages[0].username);
+  //     }
+      
+  //     setCurrentPage('dashboard');
+  //     return true;
+  //   }
     
-    // Set as current bio page
-    localStorage.setItem(`currentBioPage_${user.email}`, username);
-    setCurrentBioPage(username);
+  //   // Check for other registered users
+  //   const userKey = `user_${identifier}`;
+  //   const savedUserData = localStorage.getItem(userKey);
     
-    setIsFirstTimeUser(false);
-    setCurrentPage('dashboard');
+  //   if (savedUserData) {
+  //     const userData = JSON.parse(savedUserData);
+  //     if (userData.password === password) {
+  //       const user: User = { email: userData.email, password: userData.password };
+  //       setUser(user);
+  //       localStorage.setItem('currentUser', JSON.stringify(user));
+        
+  //       // Get bio pages
+  //       const bioPages = JSON.parse(localStorage.getItem(`bioPages_${userData.email}`) || '[]');
+        
+  //       if (bioPages.length === 0) {
+  //         setCurrentPage('create-username');
+  //         setIsFirstTimeUser(true);
+  //       } else {
+  //         const activeBioPage = localStorage.getItem(`currentBioPage_${userData.email}`);
+  //         setCurrentBioPage(activeBioPage || bioPages[0].username);
+  //         setCurrentPage('dashboard');
+  //       }
+        
+  //       return true;
+  //     }
+  //   }
+    
+  //   return false;
+  // };
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Firebase listener in useEffect will handle the state updates
+      return true;
+    } catch (error) {
+      console.error("Login failed", error);
+      throw error; // Throw error so LoginPage can display it
+    }
+  };
+
+  // const handleSignup = (email: string, password: string) => {
+  //   // Check if email already exists
+  //   const existingUser = localStorage.getItem(`user_${email}`);
+  //   if (existingUser) {
+  //     return false;
+  //   }
+
+  //   const newUser: User = { email, password };
+    
+  //   // Save user credentials
+  //   localStorage.setItem(`user_${email}`, JSON.stringify(newUser));
+  //   localStorage.setItem('currentUser', JSON.stringify(newUser));
+    
+  //   // Initialize empty bio pages array
+  //   localStorage.setItem(`bioPages_${email}`, JSON.stringify([]));
+    
+  //   setUser(newUser);
+  //   setIsFirstTimeUser(true);
+  //   setCurrentPage('create-username');
+  // };
+  const handleSignup = async (email: string, password: string) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user?.uid;
+
+      // Initialize empty bio pages array for this email
+      localStorage.setItem(`bioPages_${email}`, JSON.stringify([]));
+
+      // Also create a Firestore `users/{uid}` document so the user shows up in Firestore.
+      if (uid) {
+        await createUserDoc(uid, { email });
+      }
+
+      // Firebase listener will handle the rest
+    } catch (error) {
+      console.error("Signup failed", error);
+      throw error;
+    }
+  };
+
+  const handleCreateUsername = async (username: string) => {
+    if (!user) return;
+
+    try {
+      // Gọi hàm từ firestoreSchemas.ts để tạo document thật trên Firebase
+      await createBioPage({
+        userId: user.uid,
+        username: username,
+        bioDescription: '',
+        published: true
+      });
+
+      // Cập nhật state ứng dụng
+      setCurrentBioPage(username);
+      setIsFirstTimeUser(false);
+      setCurrentPage('dashboard');
+    } catch (error) {
+      console.error("Failed to create bio page:", error);
+      // Bạn có thể thêm toast thông báo lỗi ở đây
+    }
   };
 
   const handleSwitchBioPage = (username: string) => {
@@ -168,12 +271,20 @@ export default function App() {
     setCurrentBioPage(username);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
+  // const handleLogout = () => {
+  //   localStorage.removeItem('currentUser');
+  //   setUser(null);
+  //   setCurrentBioPage('');
+  //   setCurrentPage('login');
+  // };
+
+  const handleLogout = async () => {
+    await signOut(auth);
     setUser(null);
     setCurrentBioPage('');
     setCurrentPage('login');
   };
+
 
   if (currentPage === 'login') {
     return (
@@ -218,6 +329,7 @@ export default function App() {
       <>
         <Dashboard 
           userEmail={user.email}
+          userId={user.uid}
           currentBioPageUsername={currentBioPage}
           onSwitchBioPage={handleSwitchBioPage}
           onCreateNewBioPage={() => {
