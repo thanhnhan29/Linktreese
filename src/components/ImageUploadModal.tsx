@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Loader2 } from 'lucide-react';
 import ImageCropModal from './ImageCropModal';
+import { toast } from 'sonner';
 
 interface ImageUploadModalProps {
   currentImage: string;
@@ -8,12 +9,34 @@ interface ImageUploadModalProps {
   onImageUpdate: (image: string) => void;
 }
 
-export default function ImageUploadModal({ currentImage, onClose, onImageUpdate }: ImageUploadModalProps) {
+export default function ImageUploadModal({ 
+  currentImage, 
+  onClose, 
+  onImageUpdate,
+}: ImageUploadModalProps) {
   const [selectedImage, setSelectedImage] = useState<string>(currentImage);
   const [showCropModal, setShowCropModal] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const validateImage = (file: File): { valid: boolean; error?: string } => {
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      return { valid: false, error: 'Invalid image type. Please use JPG, PNG, GIF, or WebP.' };
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      return { valid: false, error: 'Image too large. Maximum size is 2MB.' };
+    }
+    return { valid: true };
+  };
 
   const handleFileSelect = (file: File) => {
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -57,7 +80,16 @@ export default function ImageUploadModal({ currentImage, onClose, onImageUpdate 
   };
 
   const handleCropComplete = (croppedImage: string) => {
+    console.log('[ImageUploadModal] handleCropComplete called, image length:', croppedImage?.length);
+    setUploading(true);
+    
+    // Pass the cropped image data URL to parent
+    console.log('[ImageUploadModal] Calling onImageUpdate...');
     onImageUpdate(croppedImage);
+    console.log('[ImageUploadModal] onImageUpdate called successfully');
+    toast.success('Image updated!');
+    
+    setUploading(false);
     setShowCropModal(false);
     onClose();
   };
@@ -77,7 +109,7 @@ export default function ImageUploadModal({ currentImage, onClose, onImageUpdate 
       <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl">Upload Profile Image</h2>
+          <h2 className="text-xl">Upload Image</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -92,13 +124,22 @@ export default function ImageUploadModal({ currentImage, onClose, onImageUpdate 
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center ${
               dragActive ? 'border-purple-500 bg-purple-50' : 'border-gray-300'
-            }`}
+            } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            {selectedImage ? (
+            {uploading ? (
+              <div className="space-y-4">
+                <div className="w-full h-[300px] bg-gray-50 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-purple-600 mx-auto animate-spin mb-3" />
+                    <p className="text-gray-600">Processing...</p>
+                  </div>
+                </div>
+              </div>
+            ) : selectedImage ? (
               <div className="space-y-4">
                 <div className="relative w-full h-[300px] bg-gray-100 rounded-lg overflow-hidden">
                   <img
@@ -138,11 +179,12 @@ export default function ImageUploadModal({ currentImage, onClose, onImageUpdate 
               accept="image/*"
               onChange={handleFileInput}
               className="hidden"
+              disabled={uploading}
             />
           </div>
 
           <p className="text-xs text-gray-500 mt-4">
-            Recommended: Square image, at least 400x400px
+            Recommended: Square image, at least 400x400px. Max size: 2MB
           </p>
         </div>
 
@@ -150,16 +192,18 @@ export default function ImageUploadModal({ currentImage, onClose, onImageUpdate 
         <div className="flex items-center justify-end gap-3 p-6 border-t">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={uploading}
+            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleOk}
-            disabled={!selectedImage}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!selectedImage || uploading}
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            OK
+            {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {uploading ? 'Processing...' : 'OK'}
           </button>
         </div>
       </div>

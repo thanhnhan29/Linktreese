@@ -108,7 +108,7 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
   };
 
   // Get button styles
-  const getButtonStyle = (link: Link) => {
+  const getButtonStyle = (_link?: Link) => {
     // FIX: Kiểm tra kỹ nếu không có buttons object
     if (!appearanceConfig || !appearanceConfig.buttons) {
       return {
@@ -237,10 +237,12 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
               {/* Bio */}
               {bio && (
                 <p 
-                  className="text-center mb-6"
+                  className="text-center mb-6 w-full break-words whitespace-pre-wrap overflow-hidden"
                   style={{ 
                     fontFamily: getFontFamily('body'),
-                    color: appearanceConfig?.textColors?.description || '#676b5f'
+                    color: appearanceConfig?.textColors?.description || '#676b5f',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere',
                   }}
                 >
                   {bio}

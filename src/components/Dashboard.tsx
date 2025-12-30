@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { User, Plus, Check, LogOut, ArrowRightLeft, Copy, CheckCheck, Download } from 'lucide-react';
+import { User, LogOut, Copy, CheckCheck, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog';
 import LinkEditor from './LinkEditor';
@@ -7,8 +7,9 @@ import PhonePreview from './PhonePreview';
 import Analytics from './Analytics';
 import Settings from './Settings';
 import Appearance from './Appearance';
-import Blocks from './Blocks';
 import type { Block } from './Blocks';
+import { useFileImage } from '@/features/bio-page';
+import { toast } from 'sonner';
 
 // --- FIRESTORE IMPORTS ---
 import { 
@@ -23,7 +24,6 @@ import {
   orderBy, 
   serverTimestamp,
   writeBatch,
-  getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -40,7 +40,7 @@ interface Link {
   title: string;
   url: string;
   isActive: boolean;
-  type?: string;
+  type?: 'regular' | 'social' | 'ecommerce' | 'donate' | 'contact' | 'chat';
   platform?: string;
   data?: any;
   order?: number; // Thêm trường để sắp xếp
@@ -80,6 +80,24 @@ export default function Dashboard({
   const menuRef = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
 
+  // Get profile image from file storage
+  const { 
+    imagePath: profileImagePath, 
+    uploadFromDataUrl: uploadProfileImage 
+  } = useFileImage({
+    key: currentBioPageUsername,
+    imageType: 'profile',
+  });
+
+  // Get background image from file storage
+  const { 
+    imagePath: bgImagePath, 
+    uploadFromDataUrl: uploadBgImage 
+  } = useFileImage({
+    key: currentBioPageUsername,
+    imageType: 'background',
+  });
+
   // --- 1. LẤY DOC ID CỦA PAGE HIỆN TẠI ---
   useEffect(() => {
     if (!currentBioPageUsername) return;
@@ -102,8 +120,19 @@ export default function Dashboard({
           displayName: data.displayName || data.username
         });
 
-        // Load appearance config nếu có lưu trong doc (hoặc collection riêng tuỳ thiết kế)
-        if (data.themeConfig) {
+        // Load appearance config - prefer localStorage over Firestore
+        // (because localStorage stores the actual image data)
+        const savedAppearance = localStorage.getItem(`appearance_${currentBioPageUsername}`);
+        if (savedAppearance) {
+          try {
+            setAppearanceConfig(JSON.parse(savedAppearance));
+          } catch (e) {
+            console.error("Error parsing saved appearance:", e);
+            if (data.themeConfig) {
+              setAppearanceConfig(data.themeConfig);
+            }
+          }
+        } else if (data.themeConfig) {
           setAppearanceConfig(data.themeConfig);
         }
         
@@ -201,16 +230,39 @@ export default function Dashboard({
   };
 
   const saveProfile = async (newProfileImage: string, newBio: string) => {
-    if (!bioPageId) return;
+    console.log(`[Dashboard] saveProfile called - image length: ${newProfileImage?.length || 0}, bio: ${newBio?.substring(0, 50)}...`);
+    
+    // Save profile image to file storage (not Firestore)
+    if (newProfileImage && newProfileImage.startsWith('data:')) {
+      console.log(`[Dashboard] Uploading profile image...`);
+      const result = await uploadProfileImage(newProfileImage);
+      console.log(`[Dashboard] Upload result:`, result);
+      
+      if (result) {
+        toast.success('Profile image saved!');
+      } else {
+        toast.error('Failed to save profile image. Please try again.');
+        return; // Don't continue if image upload failed
+      }
+    } else {
+      console.log(`[Dashboard] Skipping image upload - not a data URL`);
+    }
+    
+    // Save bio to Firestore only
+    if (!bioPageId) {
+      console.log(`[Dashboard] No bioPageId, skipping Firestore update`);
+      return;
+    }
+    
     try {
       const docRef = doc(db, 'bio_pages', bioPageId);
       await updateDoc(docRef, {
-        avatarUrl: newProfileImage,
         bioDescription: newBio
       });
-      // Không cần setLocalState, onSnapshot sẽ tự cập nhật
+      console.log(`[Dashboard] Bio saved to Firestore`);
     } catch (e) {
-      console.error("Error saving profile:", e);
+      console.error("[Dashboard] Error saving profile:", e);
+      toast.error('Failed to save bio. Please try again.');
     }
   };
 
@@ -318,14 +370,45 @@ export default function Dashboard({
 
   // --- HANDLER CHO APPEARANCE & SETTINGS ---
   const handleAppearanceChange = async (config: any) => {
-      if (!bioPageId) return;
+      console.log(`[Dashboard] handleAppearanceChange called`);
+      
+      if (!bioPageId) {
+        console.log(`[Dashboard] No bioPageId, skipping appearance update`);
+        return;
+      }
+      
+      // Save background image to file storage if it's a data URL
+      if (config.background?.imageUrl && config.background.imageUrl.startsWith('data:')) {
+        console.log(`[Dashboard] Uploading background image...`);
+        const result = await uploadBgImage(config.background.imageUrl);
+        console.log(`[Dashboard] Background upload result:`, result);
+        
+        if (result) {
+          toast.success('Background image saved!');
+        } else {
+          toast.error('Failed to save background image.');
+        }
+      }
+      
+      // Save config to Firestore WITHOUT the base64 image (to avoid size limits)
+      const configForFirestore = {
+        ...config,
+        background: {
+          ...config.background,
+          // Store 'file' marker instead of actual base64 data
+          imageUrl: config.background?.type === 'image' && config.background.imageUrl ? 'file' : ''
+        }
+      };
+      
       try {
-          // Lưu thẳng vào document bio_pages
+          // Save to Firestore (without large base64 data)
           await updateDoc(doc(db, 'bio_pages', bioPageId), {
-              themeConfig: config
+              themeConfig: configForFirestore
           });
+          console.log(`[Dashboard] Appearance config saved to Firestore`);
       } catch (e) {
-          console.error("Error saving appearance:", e);
+          console.error("[Dashboard] Error saving appearance:", e);
+          toast.error('Failed to save appearance settings.');
       }
   };
 
@@ -386,8 +469,8 @@ export default function Dashboard({
                 onClick={() => setShowAccountMenu(!showAccountMenu)}
                 className="w-10 h-10 bg-[#e0e2d9] rounded-full flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-[#8129d9] transition-all"
               >
-                {currentBioPage.profileImage ? (
-                  <img src={currentBioPage.profileImage} alt={currentBioPageUsername} className="w-full h-full object-cover" />
+                {profileImagePath ? (
+                  <img src={profileImagePath} alt={currentBioPageUsername} className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-5 h-5 text-[#676b5f]" />
                 )}
@@ -447,7 +530,7 @@ export default function Dashboard({
               <LinkEditor
                 links={links}
                 user={{ username: currentBioPageUsername, email: userEmail }}
-                profileImage={currentBioPage.profileImage}
+                profileImage={profileImagePath || ''}
                 bio={currentBioPage.bio}
                 onAddLink={addLink}
                 onUpdateLink={updateLink}
@@ -482,10 +565,17 @@ export default function Dashboard({
               username={currentBioPageUsername}
               name={currentBioPage.displayName}
               bio={currentBioPage.bio}
-              profileImage={currentBioPage.profileImage}
+              profileImage={profileImagePath || ''}
               links={links.filter(link => link.isActive)}
-              blocks={blocks} // Nếu chưa dùng blocks, mảng này rỗng
-              appearanceConfig={appearanceConfig}
+              blocks={blocks}
+              appearanceConfig={appearanceConfig ? {
+                ...appearanceConfig,
+                background: {
+                  ...appearanceConfig.background,
+                  // Use file-based background image if available
+                  imageUrl: bgImagePath || appearanceConfig.background?.imageUrl || ''
+                }
+              } : null}
               hideVielinkLogo={hideVielinkLogo}
             />
           </div>
@@ -493,7 +583,7 @@ export default function Dashboard({
       </div>
 
       {/* Share Dialog (Giữ nguyên) */}
-      <Dialog open={showShareDialog} onOpenChange={(open) => {
+      <Dialog open={showShareDialog} onOpenChange={(open: boolean) => {
         setShowShareDialog(open);
         if (!open) setCopiedLink(false);
       }}>

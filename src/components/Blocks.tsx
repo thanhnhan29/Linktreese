@@ -60,7 +60,7 @@ export default function Blocks({ username }: BlocksProps) {
   const [donateMethod, setDonateMethod] = useState<'momo' | 'zalopay' | 'vietqr'>('vietqr');
   const [donateQRImage, setDonateQRImage] = useState('');
   const [donatePaymentLink, setDonatePaymentLink] = useState('');
-  const [qrImageFile, setQrImageFile] = useState<File | null>(null);
+  const [_qrImageFile, setQrImageFile] = useState<File | null>(null);
   const [qrImagePreview, setQrImagePreview] = useState('');
 
   // Contact form states
@@ -631,7 +631,7 @@ export default function Blocks({ username }: BlocksProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       setDeleteConfirmOpen(true);
                       setBlockToDelete(block);
@@ -675,7 +675,7 @@ export default function Blocks({ username }: BlocksProps) {
       </Dialog>
 
       {/* Add Block Form Dialog */}
-      <Dialog open={showBlockForm} onOpenChange={(open) => {
+      <Dialog open={showBlockForm} onOpenChange={(open: boolean) => {
         setShowBlockForm(open);
         if (!open) {
           // Reset editingBlock when dialog closes

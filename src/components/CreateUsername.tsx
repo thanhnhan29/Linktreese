@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Check, X, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import svgPaths from "../imports/svg-du8004kdwc";
@@ -10,7 +10,7 @@ interface CreateUsernameProps {
   isFirstTime?: boolean;
 }
 
-export default function CreateUsername({ userEmail, onCreateUsername, isFirstTime = true }: CreateUsernameProps) {
+export default function CreateUsername({ userEmail: _userEmail, onCreateUsername, isFirstTime = true }: CreateUsernameProps) {
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);

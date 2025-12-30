@@ -40,9 +40,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
   const [displayName, setDisplayName] = useState('');
   
   // Validation errors
-  const [emailError, setEmailError] = useState('');
+  const [_emailError, _setEmailError] = useState('');
   const [currentPasswordError, setCurrentPasswordError] = useState('');
-  const [newPasswordError, setNewPasswordError] = useState('');
+  const [_newPasswordError, setNewPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   
   // Dialogs
@@ -483,7 +483,7 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
             </div>
             <Switch
               checked={hideVielinkLogo}
-              onCheckedChange={(checked) => {
+              onCheckedChange={(checked: boolean) => {
                 setHideVielinkLogo(checked);
                 // Auto-save when toggled
                 const settings = {

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
-import Cropper from 'react-easy-crop';
-import { Point, Area } from 'react-easy-crop/types';
+import Cropper, { Point, Area } from 'react-easy-crop';
 
 interface ImageCropModalProps {
   image: string;
@@ -23,30 +22,46 @@ export default function ImageCropModal({ image, onClose, onCropComplete }: Image
   };
 
   const onCropCompleteCallback = useCallback(
-    (croppedArea: Area, croppedAreaPixels: Area) => {
+    (_croppedArea: Area, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
     []
   );
 
   const createCroppedImage = async () => {
-    if (!croppedAreaPixels) return;
+    if (!croppedAreaPixels) {
+      console.error('[ImageCropModal] No cropped area pixels');
+      return;
+    }
 
     try {
+      console.log('[ImageCropModal] Creating cropped image from:', image.substring(0, 50));
+      
       const canvas = document.createElement('canvas');
       const imageElement = new Image();
+      
+      // Handle CORS for images
+      imageElement.crossOrigin = 'anonymous';
       imageElement.src = image;
 
-      await new Promise((resolve) => {
+      await new Promise((resolve, reject) => {
         imageElement.onload = resolve;
+        imageElement.onerror = reject;
       });
 
+      console.log('[ImageCropModal] Image loaded, size:', imageElement.width, 'x', imageElement.height);
+
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        console.error('[ImageCropModal] Failed to get canvas context');
+        return;
+      }
 
       // Set canvas size to the cropped area
       canvas.width = croppedAreaPixels.width;
       canvas.height = croppedAreaPixels.height;
+
+      console.log('[ImageCropModal] Cropping to:', croppedAreaPixels);
 
       // Draw the cropped image
       ctx.drawImage(
@@ -61,16 +76,18 @@ export default function ImageCropModal({ image, onClose, onCropComplete }: Image
         croppedAreaPixels.height
       );
 
-      // Convert to blob and return
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          onCropComplete(url);
-          onClose();
-        }
-      }, 'image/jpeg');
+      // Convert to base64 data URL and return
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      console.log('[ImageCropModal] Created cropped image, length:', dataUrl.length);
+      
+      if (dataUrl.length < 100) {
+        console.error('[ImageCropModal] Generated image is too small, something went wrong');
+        return;
+      }
+      
+      onCropComplete(dataUrl);
     } catch (error) {
-      console.error('Error cropping image:', error);
+      console.error('[ImageCropModal] Error cropping image:', error);
     }
   };
 
