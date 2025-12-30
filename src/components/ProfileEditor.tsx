@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { User, Camera, Sparkles, Check, X, Loader2 } from 'lucide-react';
-import ImageUploadModal from './ImageUploadModal';
-import { Button } from './ui/button';
-import { GoogleGenAI } from '@google/genai';
+import { useState, useEffect } from "react";
+import { User, Camera, Sparkles, Check, X, Loader2 } from "lucide-react";
+import ImageUploadModal from "./ImageUploadModal";
+import { Button } from "./ui/button";
+import { GoogleGenAI } from "@google/genai";
 
 interface ProfileEditorProps {
   profileImage: string;
@@ -10,12 +10,16 @@ interface ProfileEditorProps {
   onUpdateProfile: (profileImage: string, bio: string) => void;
 }
 
-export default function ProfileEditor({ profileImage, bio, onUpdateProfile }: ProfileEditorProps) {
+export default function ProfileEditor({
+  profileImage,
+  bio,
+  onUpdateProfile,
+}: ProfileEditorProps) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [localBio, setLocalBio] = useState(bio);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
-  const [previousBio, setPreviousBio] = useState<string>('');
+  const [previousBio, setPreviousBio] = useState<string>("");
 
   // Sync localBio with bio prop when it changes (e.g., when switching bio pages)
   useEffect(() => {
@@ -33,7 +37,7 @@ export default function ProfileEditor({ profileImage, bio, onUpdateProfile }: Pr
 
   const generateAIBio = async () => {
     if (!localBio.trim()) {
-      alert('Vui lòng nhập bio trước để AI có thể cải thiện!');
+      alert("Vui lòng nhập bio trước để AI có thể cải thiện!");
       return;
     }
 
@@ -41,39 +45,32 @@ export default function ProfileEditor({ profileImage, bio, onUpdateProfile }: Pr
     setPreviousBio(localBio);
 
     try {
-      const ai = new GoogleGenAI({
-        apiKey: 'AIzaSyBju_I-KGiuFR5vuFu6tJmu6v4MOmyLnIo',
-      });
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error("Missing VITE_GEMINI_API_KEY in environment.");
+        alert(
+          "AI key not configured. Please set VITE_GEMINI_API_KEY in your .env"
+        );
+        setIsGenerating(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-lite',
+        model: "gemini-2.0-flash-lite",
         contents: `Viết lại bio Linktree, tiếng Việt, hấp dẫn, cuốn hút người xem. Lưu ý: chỉ trả về đáp án được yêu cầu, không trả lời gì thêm: "${localBio}"`,
       });
 
       let generatedBio = response.text.trim();
-      
-      // Remove quotes if AI added them
-      generatedBio = generatedBio.replace(/^[\"']|[\"']$/g, '');
-      
-      // Truncate to 120 characters if needed
-      // if (generatedBio.length > 120) {
-      //   generatedBio = generatedBio.substring(0, 117) + '...';
-      // }
-      
+      generatedBio = generatedBio.replace(/^[\"']|[\"']$/g, "");
+
       setAiSuggestion(generatedBio);
     } catch (error) {
-      console.error('Error generating AI bio:', error);
-      alert('Không thể tạo bio bằng AI. Vui lòng thử lại.');
+      console.error("Error generating AI bio:", error);
+      alert("Không thể tạo bio bằng AI. Vui lòng thử lại.");
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const handleAcceptAI = () => {
-    if (aiSuggestion) {
-      handleBioChange(aiSuggestion);
-      setAiSuggestion(null);
-      setPreviousBio('');
     }
   };
 
@@ -84,18 +81,18 @@ export default function ProfileEditor({ profileImage, bio, onUpdateProfile }: Pr
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-6">
       <h2 className="text-xl mb-6">Profile</h2>
-      
+
       <div className="flex gap-6">
         {/* Profile Image */}
         <div className="flex-shrink-0">
-          <div 
+          <div
             className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 cursor-pointer group"
             onClick={() => setShowUploadModal(true)}
           >
             {profileImage ? (
-              <img 
-                src={profileImage} 
-                alt="Profile" 
+              <img
+                src={profileImage}
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -108,15 +105,15 @@ export default function ProfileEditor({ profileImage, bio, onUpdateProfile }: Pr
               <Camera className="w-6 h-6 text-white" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 text-center mt-2">Click to change</p>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            Click to change
+          </p>
         </div>
 
         {/* Bio */}
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm text-gray-700">
-              Bio
-            </label>
+            <label className="block text-sm text-gray-700">Bio</label>
             <Button
               onClick={generateAIBio}
               disabled={isGenerating || !localBio.trim()}
@@ -157,9 +154,11 @@ export default function ProfileEditor({ profileImage, bio, onUpdateProfile }: Pr
                   <Sparkles className="w-4 h-4 text-purple-600" />
                   <span className="text-sm text-purple-900">AI Suggestion</span>
                 </div>
-                <span className="text-xs text-gray-500">{aiSuggestion.length} chars</span>
+                <span className="text-xs text-gray-500">
+                  {aiSuggestion.length} chars
+                </span>
               </div>
-              
+
               <div className="bg-white rounded-md p-3 mb-3">
                 <p className="text-sm text-gray-800">{aiSuggestion}</p>
               </div>
