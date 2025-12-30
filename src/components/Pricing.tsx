@@ -20,7 +20,7 @@ export default function Pricing({ onSelectPlan }: PricingProps) {
   return (
     <Resizable
       size={size}
-      onResizeStop={(e, direction, ref, d) => {
+      onResizeStop={(_e, _direction, _ref, d) => {
         setSize({
           width: size.width + d.width,
           height: size.height + d.height,

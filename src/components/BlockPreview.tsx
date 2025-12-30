@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, Heart, Mail, MessageCircle, X } from 'lucide-react';
+import { ShoppingBag, Heart, Mail } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';

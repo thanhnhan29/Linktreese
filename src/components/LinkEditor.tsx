@@ -39,7 +39,7 @@ interface LinkEditorProps {
 
 export default function LinkEditor({
   links,
-  user,
+  user: _user,
   profileImage,
   bio,
   onAddLink,
@@ -372,7 +372,9 @@ export default function LinkEditor({
 
   const handleEditLink = (link: Link) => {
     setEditingLink(link);
-    setLinkType(link.type || 'social');
+    // Cast type to valid linkType, default to 'social' if 'regular' or undefined
+    const validType = link.type === 'regular' ? 'social' : (link.type || 'social');
+    setLinkType(validType as 'social' | 'ecommerce' | 'donate' | 'contact' | 'chat');
     setIsDialogOpen(true);
     
     // Load data based on link type
@@ -665,7 +667,7 @@ export default function LinkEditor({
       />
 
       {/* Add Link Button */}
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+      <Dialog open={isDialogOpen} onOpenChange={(open: boolean) => {
         setIsDialogOpen(open);
         if (!open) {
           resetForm();
@@ -1132,7 +1134,7 @@ export default function LinkEditor({
 
                   <Switch
                     checked={link.isActive}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={() => {
                       onToggleLink(link.id);
                     }}
                   />
@@ -1140,7 +1142,7 @@ export default function LinkEditor({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       setLinkToDelete(link);
                       setDeleteConfirmOpen(true);

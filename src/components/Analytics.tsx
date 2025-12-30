@@ -13,11 +13,7 @@ import {
   Cell,
 } from "recharts";
 import {
-  TrendingUp,
-  Eye,
   MousePointer,
-  Users,
-  DollarSign,
   Share2,
 } from "lucide-react";
 import {
@@ -43,12 +39,13 @@ interface LinkClick {
   linkTitle: string;
 }
 
-interface TrafficSource {
-  name: string;
-  value: number;
-  percentage: number;
-  color: string;
-}
+// TrafficSource interface for future use
+// interface TrafficSource {
+//   name: string;
+//   value: number;
+//   percentage: number;
+//   color: string;
+// }
 
 interface AnalyticsProps {
   username: string;

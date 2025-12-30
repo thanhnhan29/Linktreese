@@ -1,14 +1,24 @@
 import { useState, useEffect } from "react";
-import { User, Camera, Sparkles, Check, X, Loader2 } from "lucide-react";
+import { User, Camera, Sparkles, Check, X, Loader2, Wand2 } from "lucide-react";
 import ImageUploadModal from "./ImageUploadModal";
 import { Button } from "./ui/button";
-import { GoogleGenAI } from "@google/genai";
+import { useBioWriter } from "@/features/bio-page";
+import type { BioStyle } from "@/features/bio-page";
 
 interface ProfileEditorProps {
   profileImage: string;
   bio: string;
   onUpdateProfile: (profileImage: string, bio: string) => void;
 }
+
+const STYLE_OPTIONS: { value: BioStyle; label: string; icon: string }[] = [
+  { value: 'professional', label: 'Professional', icon: '💼' },
+  { value: 'creative', label: 'Creative', icon: '🎨' },
+  { value: 'casual', label: 'Casual', icon: '😊' },
+  { value: 'funny', label: 'Funny', icon: '😄' },
+  { value: 'minimal', label: 'Minimal', icon: '✨' },
+  { value: 'inspiring', label: 'Inspiring', icon: '🚀' },
+];
 
 export default function ProfileEditor({
   profileImage,
@@ -17,11 +27,20 @@ export default function ProfileEditor({
 }: ProfileEditorProps) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [localBio, setLocalBio] = useState(bio);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
-  const [previousBio, setPreviousBio] = useState<string>("");
+  const [selectedStyle, setSelectedStyle] = useState<BioStyle>('professional');
+  const [showStylePicker, setShowStylePicker] = useState(false);
 
-  // Sync localBio with bio prop when it changes (e.g., when switching bio pages)
+  // Bio writer hook
+  const { 
+    isGenerating, 
+    suggestion, 
+    error: bioError,
+    isAvailable,
+    improveBio,
+    clearSuggestion,
+  } = useBioWriter();
+
+  // Sync localBio with bio prop when it changes
   useEffect(() => {
     setLocalBio(bio);
   }, [bio]);
@@ -32,50 +51,30 @@ export default function ProfileEditor({
   };
 
   const handleImageUpdate = (newImage: string) => {
+    console.log('[ProfileEditor] handleImageUpdate called, image length:', newImage?.length);
+    console.log('[ProfileEditor] Calling onUpdateProfile...');
     onUpdateProfile(newImage, localBio);
+    console.log('[ProfileEditor] onUpdateProfile called');
   };
 
-  const generateAIBio = async () => {
+  const handleGenerateBio = async () => {
     if (!localBio.trim()) {
-      alert("Vui lòng nhập bio trước để AI có thể cải thiện!");
+      alert("Please enter a bio first for AI to improve!");
       return;
     }
+    await improveBio(localBio, selectedStyle, 'en');
+  };
 
-    setIsGenerating(true);
-    setPreviousBio(localBio);
-
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        console.error("Missing VITE_GEMINI_API_KEY in environment.");
-        alert(
-          "AI key not configured. Please set VITE_GEMINI_API_KEY in your .env"
-        );
-        setIsGenerating(false);
-        return;
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash-lite",
-        contents: `Viết lại bio Linktree, tiếng Việt, hấp dẫn, cuốn hút người xem. Lưu ý: chỉ trả về đáp án được yêu cầu, không trả lời gì thêm: "${localBio}"`,
-      });
-
-      let generatedBio = response.text.trim();
-      generatedBio = generatedBio.replace(/^[\"']|[\"']$/g, "");
-
-      setAiSuggestion(generatedBio);
-    } catch (error) {
-      console.error("Error generating AI bio:", error);
-      alert("Không thể tạo bio bằng AI. Vui lòng thử lại.");
-    } finally {
-      setIsGenerating(false);
+  const handleAcceptSuggestion = () => {
+    if (suggestion) {
+      setLocalBio(suggestion);
+      onUpdateProfile(profileImage, suggestion);
+      clearSuggestion();
     }
   };
 
-  const handleRejectAI = () => {
-    setAiSuggestion(null);
+  const handleRejectSuggestion = () => {
+    clearSuggestion();
   };
 
   return (
@@ -114,25 +113,60 @@ export default function ProfileEditor({
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm text-gray-700">Bio</label>
-            <Button
-              onClick={generateAIBio}
-              disabled={isGenerating || !localBio.trim()}
-              size="sm"
-              variant="outline"
-              className="gap-1"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Generating...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                  <span>AI Writer</span>
-                </>
-              )}
-            </Button>
+            {isAvailable && (
+              <div className="flex items-center gap-2">
+                {/* Style Picker */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowStylePicker(!showStylePicker)}
+                    className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-gray-200 hover:bg-gray-50"
+                  >
+                    <Wand2 className="w-3 h-3" />
+                    {STYLE_OPTIONS.find(s => s.value === selectedStyle)?.icon}
+                  </button>
+                  
+                  {showStylePicker && (
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-2 min-w-[140px]">
+                      {STYLE_OPTIONS.map((style) => (
+                        <button
+                          key={style.value}
+                          onClick={() => {
+                            setSelectedStyle(style.value);
+                            setShowStylePicker(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-50 ${
+                            selectedStyle === style.value ? 'bg-purple-50 text-purple-700' : ''
+                          }`}
+                        >
+                          <span>{style.icon}</span>
+                          <span>{style.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  onClick={handleGenerateBio}
+                  disabled={isGenerating || !localBio.trim()}
+                  size="sm"
+                  variant="outline"
+                  className="gap-1"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-purple-600" />
+                      <span>AI Writer</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
 
           <textarea
@@ -146,26 +180,36 @@ export default function ProfileEditor({
             {localBio.length}/200 characters
           </p>
 
+          {/* Error Message */}
+          {bioError && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-xs text-red-600">{bioError}</p>
+            </div>
+          )}
+
           {/* AI Suggestion Box */}
-          {aiSuggestion && (
+          {suggestion && (
             <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm text-purple-900">AI Suggestion</span>
+                  <span className="text-sm font-medium text-purple-900">AI Suggestion</span>
+                  <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                    {STYLE_OPTIONS.find(s => s.value === selectedStyle)?.label}
+                  </span>
                 </div>
                 <span className="text-xs text-gray-500">
-                  {aiSuggestion.length} chars
+                  {suggestion.length} chars
                 </span>
               </div>
 
               <div className="bg-white rounded-md p-3 mb-3">
-                <p className="text-sm text-gray-800">{aiSuggestion}</p>
+                <p className="text-sm text-gray-800">{suggestion}</p>
               </div>
 
               <div className="flex gap-2">
                 <Button
-                  onClick={handleAcceptAI}
+                  onClick={handleAcceptSuggestion}
                   size="sm"
                   className="flex-1 bg-purple-600 hover:bg-purple-700"
                 >
@@ -173,7 +217,7 @@ export default function ProfileEditor({
                   Accept
                 </Button>
                 <Button
-                  onClick={handleRejectAI}
+                  onClick={handleRejectSuggestion}
                   size="sm"
                   variant="outline"
                   className="flex-1"
@@ -190,7 +234,7 @@ export default function ProfileEditor({
       {/* Image Upload Modal */}
       {showUploadModal && (
         <ImageUploadModal
-          currentImage={profileImage}
+          currentImage={profileImage || ''}
           onClose={() => setShowUploadModal(false)}
           onImageUpdate={handleImageUpdate}
         />

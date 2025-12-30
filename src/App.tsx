@@ -13,22 +13,14 @@ import { Toaster } from './components/ui/sonner';
 
 type Page = 'login' | 'signup' | 'dashboard' | 'forgot-password' | 'reset-password' | 'create-username';
 
-interface User {
+interface AppUser {
   email: string;
-  password: string;
   uid: string;
-}
-
-interface BioPage {
-  username: string;
-  profileImage: string;
-  bio: string;
-  displayName: string;
 }
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('login');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [currentBioPage, setCurrentBioPage] = useState<string>('');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
 
@@ -86,7 +78,7 @@ export default function App() {
       unsubscribeFn = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser && firebaseUser.email) {
           // Lưu thông tin user bao gồm cả UID
-          const userData: User = { 
+          const userData: AppUser = { 
             email: firebaseUser.email, 
             uid: firebaseUser.uid 
           };
