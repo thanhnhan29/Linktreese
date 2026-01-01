@@ -13,10 +13,10 @@ import {
   where,
   serverTimestamp,
   DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '../firebase';
-import type { BioPage, ThemeConfig } from '@/shared/types';
-import { DEFAULT_THEME_CONFIG } from '@/shared/types';
+} from "firebase/firestore";
+import { db } from "../firebase";
+import type { BioPage, ThemeConfig } from "@/shared/types";
+import { DEFAULT_THEME_CONFIG } from "@/shared/types";
 
 export interface CreateBioPageDTO {
   userId: string;
@@ -38,7 +38,7 @@ export interface UpdateBioPageDTO {
 }
 
 class BioPageRepository {
-  private collectionName = 'bio_pages';
+  private collectionName = "bio_pages";
 
   /**
    * Find bio page by ID
@@ -55,10 +55,10 @@ class BioPageRepository {
   async findByUsername(username: string): Promise<BioPage | null> {
     const q = query(
       collection(db, this.collectionName),
-      where('username', '==', username.toLowerCase())
+      where("username", "==", username.toLowerCase())
     );
     const snapshot = await getDocs(q);
-    
+
     if (snapshot.empty) return null;
     return this.mapToModel(snapshot.docs[0]);
   }
@@ -69,10 +69,10 @@ class BioPageRepository {
   async findByUserId(userId: string): Promise<BioPage[]> {
     const q = query(
       collection(db, this.collectionName),
-      where('userId', '==', userId)
+      where("userId", "==", userId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => this.mapToModel(doc));
+    return snapshot.docs.map((doc) => this.mapToModel(doc));
   }
 
   /**
@@ -91,8 +91,8 @@ class BioPageRepository {
       userId: data.userId,
       username: data.username.toLowerCase(),
       displayName: data.displayName || data.username,
-      bioDescription: data.bioDescription || '',
-      avatarUrl: data.avatarUrl || '',
+      bioDescription: data.bioDescription || "",
+      avatarUrl: data.avatarUrl || "",
       isLogoHidden: false,
       published: data.published ?? true,
       viewCount: 0,
@@ -105,10 +105,10 @@ class BioPageRepository {
     };
 
     const docRef = await addDoc(collection(db, this.collectionName), payload);
-    
+
     const created = await this.findById(docRef.id);
     if (!created) {
-      throw new Error('Failed to create bio page');
+      throw new Error("Failed to create bio page");
     }
     return created;
   }
@@ -118,11 +118,11 @@ class BioPageRepository {
    */
   async update(id: string, data: UpdateBioPageDTO): Promise<BioPage> {
     const docRef = doc(db, this.collectionName, id);
-    
+
     // Get current data for theme config merge
     const current = await this.findById(id);
     if (!current) {
-      throw new Error('Bio page not found');
+      throw new Error("Bio page not found");
     }
 
     const payload: Record<string, unknown> = {
@@ -130,11 +130,13 @@ class BioPageRepository {
     };
 
     if (data.displayName !== undefined) payload.displayName = data.displayName;
-    if (data.bioDescription !== undefined) payload.bioDescription = data.bioDescription;
+    if (data.bioDescription !== undefined)
+      payload.bioDescription = data.bioDescription;
     if (data.avatarUrl !== undefined) payload.avatarUrl = data.avatarUrl;
-    if (data.isLogoHidden !== undefined) payload.isLogoHidden = data.isLogoHidden;
+    if (data.isLogoHidden !== undefined)
+      payload.isLogoHidden = data.isLogoHidden;
     if (data.published !== undefined) payload.published = data.published;
-    
+
     if (data.themeConfig) {
       payload.themeConfig = {
         ...current.themeConfig,
@@ -143,10 +145,10 @@ class BioPageRepository {
     }
 
     await updateDoc(docRef, payload);
-    
+
     const updated = await this.findById(id);
     if (!updated) {
-      throw new Error('Failed to update bio page');
+      throw new Error("Failed to update bio page");
     }
     return updated;
   }
@@ -187,4 +189,3 @@ class BioPageRepository {
 }
 
 export const bioPageRepository = new BioPageRepository();
-

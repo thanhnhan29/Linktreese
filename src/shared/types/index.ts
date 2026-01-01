@@ -7,7 +7,7 @@ export interface User {
   email: string;
   fullName?: string;
   avatarUrl?: string;
-  authProvider: 'email' | 'google';
+  authProvider: "email" | "google";
   proPurchase: boolean;
   proExpiresAt?: Date;
   createdAt: Date;
@@ -21,12 +21,12 @@ export interface AuthUser {
 
 // Bio page types
 export interface ThemeConfig {
-  backgroundType: 'solid' | 'gradient' | 'image';
+  backgroundType: "solid" | "gradient" | "image";
   backgroundValue: string;
   gradientStart?: string;
   gradientEnd?: string;
-  gradientDirection?: 'to-b' | 'to-t' | 'to-r' | 'to-l' | 'to-br' | 'to-bl';
-  buttonStyle: 'rounded' | 'square' | 'pill';
+  gradientDirection?: "to-b" | "to-t" | "to-r" | "to-l" | "to-br" | "to-bl";
+  buttonStyle: "rounded" | "square" | "pill";
   buttonColor: string;
   buttonTextColor: string;
   buttonShadow: boolean;
@@ -65,7 +65,7 @@ export interface Link {
   id: string;
   title: string;
   url: string;
-  type: 'social' | 'custom';
+  type: "social" | "custom";
   platform?: string;
   icon?: string;
   isActive: boolean;
@@ -76,7 +76,7 @@ export interface Link {
 }
 
 // Block types
-export type BlockType = 'ecommerce' | 'donate' | 'contact' | 'chat';
+export type BlockType = "ecommerce" | "donate" | "contact" | "chat";
 
 export interface Block {
   id: string;
@@ -99,18 +99,17 @@ export interface ApiError {
 
 // Default values
 export const DEFAULT_THEME_CONFIG: ThemeConfig = {
-  backgroundType: 'solid',
-  backgroundValue: '#ffffff',
-  buttonStyle: 'rounded',
-  buttonColor: '#8129d9',
-  buttonTextColor: '#ffffff',
+  backgroundType: "solid",
+  backgroundValue: "#ffffff",
+  buttonStyle: "rounded",
+  buttonColor: "#8129d9",
+  buttonTextColor: "#ffffff",
   buttonShadow: false,
-  fontFamily: 'Inter, sans-serif',
-  textColor: '#000000',
-  usernameColor: '#000000',
-  descriptionColor: '#676b5f',
+  fontFamily: "Inter, sans-serif",
+  textColor: "#000000",
+  usernameColor: "#000000",
+  descriptionColor: "#676b5f",
 };
 
 // Re-export theme types
-export * from './theme';
-
+export * from "./theme";

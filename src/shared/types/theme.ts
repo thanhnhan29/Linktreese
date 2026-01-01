@@ -1,9 +1,15 @@
 // src/shared/types/theme.ts
 // Comprehensive theme type definitions
 
-export type BackgroundType = 'solid' | 'gradient' | 'image';
-export type ButtonStyle = 'rounded' | 'square' | 'pill';
-export type GradientDirection = 'to-b' | 'to-t' | 'to-r' | 'to-l' | 'to-br' | 'to-bl';
+export type BackgroundType = "solid" | "gradient" | "image";
+export type ButtonStyle = "rounded" | "square" | "pill";
+export type GradientDirection =
+  | "to-b"
+  | "to-t"
+  | "to-r"
+  | "to-l"
+  | "to-br"
+  | "to-bl";
 
 // Background configuration
 export interface BackgroundConfig {
@@ -59,48 +65,48 @@ export interface ThemePreset {
 }
 
 // Theme categories
-export type ThemeCategory = 
-  | 'minimal'
-  | 'dark'
-  | 'gradient'
-  | 'colorful'
-  | 'professional'
-  | 'nature'
-  | 'seasonal';
+export type ThemeCategory =
+  | "minimal"
+  | "dark"
+  | "gradient"
+  | "colorful"
+  | "professional"
+  | "nature"
+  | "seasonal";
 
 // Google Font option
 export interface FontOption {
   name: string;
   value: string;
-  category: 'sans-serif' | 'serif' | 'display' | 'handwriting' | 'monospace';
+  category: "sans-serif" | "serif" | "display" | "handwriting" | "monospace";
 }
 
 // Default configurations
 export const DEFAULT_BACKGROUND: BackgroundConfig = {
-  type: 'solid',
-  solidColor: '#ffffff',
-  gradientStart: '#8129d9',
-  gradientEnd: '#43E660',
-  gradientDirection: 'to-b',
-  imageUrl: '',
+  type: "solid",
+  solidColor: "#ffffff",
+  gradientStart: "#8129d9",
+  gradientEnd: "#43E660",
+  gradientDirection: "to-b",
+  imageUrl: "",
 };
 
 export const DEFAULT_BUTTONS: ButtonConfig = {
-  style: 'rounded',
-  backgroundColor: '#8129d9',
-  textColor: '#ffffff',
-  borderColor: '#8129d9',
+  style: "rounded",
+  backgroundColor: "#8129d9",
+  textColor: "#ffffff",
+  borderColor: "#8129d9",
   hasShadow: true,
 };
 
 export const DEFAULT_FONTS: FontConfig = {
-  heading: 'Inter',
-  body: 'Inter',
+  heading: "Inter",
+  body: "Inter",
 };
 
 export const DEFAULT_TEXT_COLORS: TextColorConfig = {
-  username: '#000000',
-  description: '#676b5f',
+  username: "#000000",
+  description: "#676b5f",
 };
 
 export const DEFAULT_APPEARANCE_CONFIG: AppearanceConfig = {
@@ -111,12 +117,15 @@ export const DEFAULT_APPEARANCE_CONFIG: AppearanceConfig = {
 };
 
 // Convert AppearanceConfig to ThemeConfig (for backward compatibility)
-export function appearanceToThemeConfig(appearance: AppearanceConfig): import('./index').ThemeConfig {
+export function appearanceToThemeConfig(
+  appearance: AppearanceConfig
+): import("./index").ThemeConfig {
   return {
     backgroundType: appearance.background.type,
-    backgroundValue: appearance.background.type === 'solid' 
-      ? appearance.background.solidColor 
-      : appearance.background.imageUrl || appearance.background.gradientStart,
+    backgroundValue:
+      appearance.background.type === "solid"
+        ? appearance.background.solidColor
+        : appearance.background.imageUrl || appearance.background.gradientStart,
     gradientStart: appearance.background.gradientStart,
     gradientEnd: appearance.background.gradientEnd,
     gradientDirection: appearance.background.gradientDirection,
@@ -132,15 +141,18 @@ export function appearanceToThemeConfig(appearance: AppearanceConfig): import('.
 }
 
 // Convert ThemeConfig to AppearanceConfig (for backward compatibility)
-export function themeConfigToAppearance(theme: import('./index').ThemeConfig): AppearanceConfig {
+export function themeConfigToAppearance(
+  theme: import("./index").ThemeConfig
+): AppearanceConfig {
   return {
     background: {
       type: theme.backgroundType,
-      solidColor: theme.backgroundType === 'solid' ? theme.backgroundValue : '#ffffff',
-      gradientStart: theme.gradientStart || '#8129d9',
-      gradientEnd: theme.gradientEnd || '#43E660',
-      gradientDirection: theme.gradientDirection || 'to-b',
-      imageUrl: theme.backgroundType === 'image' ? theme.backgroundValue : '',
+      solidColor:
+        theme.backgroundType === "solid" ? theme.backgroundValue : "#ffffff",
+      gradientStart: theme.gradientStart || "#8129d9",
+      gradientEnd: theme.gradientEnd || "#43E660",
+      gradientDirection: theme.gradientDirection || "to-b",
+      imageUrl: theme.backgroundType === "image" ? theme.backgroundValue : "",
     },
     buttons: {
       style: theme.buttonStyle,
@@ -150,8 +162,10 @@ export function themeConfigToAppearance(theme: import('./index').ThemeConfig): A
       hasShadow: theme.buttonShadow,
     },
     fonts: {
-      heading: theme.fontFamily.split(',')[0].trim(),
-      body: theme.fontFamily.split(',')[0].trim(),
+      heading: theme.fontFamily
+        ? theme.fontFamily.split(",")[0].trim()
+        : "Inter",
+      body: theme.fontFamily ? theme.fontFamily.split(",")[0].trim() : "Inter",
     },
     textColors: {
       username: theme.usernameColor,
@@ -159,4 +173,3 @@ export function themeConfigToAppearance(theme: import('./index').ThemeConfig): A
     },
   };
 }
-

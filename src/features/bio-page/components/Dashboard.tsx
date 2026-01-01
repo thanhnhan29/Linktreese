@@ -1,17 +1,26 @@
 // src/features/bio-page/components/Dashboard.tsx
 // Main dashboard component using the new architecture
 
-import { useState, useEffect, useRef } from 'react';
-import { User, LogOut, Copy, CheckCheck, Download } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import LinkEditor from '@/components/LinkEditor';
-import PhonePreview from '@/components/PhonePreview';
-import Analytics from '@/components/Analytics';
-import Settings from '@/components/Settings';
-import Appearance from '@/components/Appearance';
-import { useBioPage, useLinks, useBlocks } from '../hooks';
-import { themeConfigToAppearance, appearanceToThemeConfig, type AppearanceConfig } from '@/shared/types/theme';
+import { useState, useEffect, useRef } from "react";
+import { User, LogOut, Copy, CheckCheck, Download } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import LinkEditor from "@/components/LinkEditor";
+import PhonePreview from "@/components/PhonePreview";
+import Analytics from "@/components/Analytics";
+import Settings from "@/components/Settings";
+import Appearance from "@/components/Appearance";
+import { useBioPage, useLinks, useBlocks } from "../hooks";
+import {
+  themeConfigToAppearance,
+  appearanceToThemeConfig,
+  type AppearanceConfig,
+} from "@/shared/types/theme";
 
 interface DashboardProps {
   userEmail: string;
@@ -30,11 +39,13 @@ export default function Dashboard({
   onCreateNewBioPage,
   onLogout,
 }: DashboardProps) {
-  const [currentTab, setCurrentTab] = useState<'Links' | 'Analytics' | 'Settings' | 'Appearance'>('Links');
+  const [currentTab, setCurrentTab] = useState<
+    "Links" | "Analytics" | "Settings" | "Appearance"
+  >("Links");
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  
+
   const menuRef = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
 
@@ -49,18 +60,10 @@ export default function Dashboard({
     updateSettings,
   } = useBioPage(userId, currentBioPageUsername);
 
-  const {
-    links,
-    addLink,
-    updateLink,
-    deleteLink,
-    toggleLink,
-    moveLink,
-  } = useLinks(bioPage?.id || null);
+  const { links, addLink, updateLink, deleteLink, toggleLink, moveLink } =
+    useLinks(bioPage?.id || null);
 
-  const {
-    blocks,
-  } = useBlocks(bioPage?.id || null);
+  const { blocks } = useBlocks(bioPage?.id || null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -69,8 +72,8 @@ export default function Dashboard({
         setShowAccountMenu(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const copyToClipboard = async (text: string) => {
@@ -79,7 +82,7 @@ export default function Dashboard({
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (err) {
-      console.error('Failed to copy', err);
+      console.error("Failed to copy", err);
     }
   };
 
@@ -92,27 +95,27 @@ export default function Dashboard({
   };
 
   const downloadQR = () => {
-    const svg = qrCodeRef.current?.querySelector('svg');
+    const svg = qrCodeRef.current?.querySelector("svg");
     if (!svg) return;
 
     const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     const img = new Image();
 
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       ctx?.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL('image/png');
+      const pngFile = canvas.toDataURL("image/png");
 
-      const downloadLink = document.createElement('a');
+      const downloadLink = document.createElement("a");
       downloadLink.download = `vielink-${currentBioPageUsername}-qr.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
 
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
   // Map links to format expected by existing components
@@ -144,14 +147,14 @@ export default function Dashboard({
             <h2 className="text-black font-bold">Vielink</h2>
 
             <nav className="flex gap-6">
-              {['Links', 'Appearance', 'Analytics', 'Settings'].map((tab) => (
+              {["Links", "Appearance", "Analytics", "Settings"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setCurrentTab(tab as any)}
                   className={`capitalize ${
                     currentTab === tab
-                      ? 'text-black font-medium'
-                      : 'text-[#676b5f] hover:text-[#8129d9]'
+                      ? "text-black font-medium"
+                      : "text-[#676b5f] hover:text-[#8129d9]"
                   }`}
                 >
                   {tab}
@@ -162,7 +165,9 @@ export default function Dashboard({
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-[#676b5f] text-sm">@{currentBioPageUsername}</span>
+              <span className="text-[#676b5f] text-sm">
+                @{currentBioPageUsername}
+              </span>
             </div>
             <button
               className="bg-white border border-[#e0e2d9] text-black px-4 py-2 rounded-full hover:bg-[#f6f7f5]"
@@ -199,11 +204,13 @@ export default function Dashboard({
                       <LogOut size={14} /> Log out
                     </button>
                   </div>
-                  
+
                   {/* List of bio pages for quick switching */}
                   <div className="max-h-56 overflow-y-auto">
                     {bioPages.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-[#676b5f]">No bio pages yet</div>
+                      <div className="px-4 py-3 text-sm text-[#676b5f]">
+                        No bio pages yet
+                      </div>
                     ) : (
                       bioPages.map((page) => (
                         <button
@@ -213,7 +220,9 @@ export default function Dashboard({
                             setShowAccountMenu(false);
                           }}
                           className={`w-full text-left px-4 py-3 hover:bg-[#f6f7f5] flex items-center gap-3 ${
-                            page.username === currentBioPageUsername ? 'bg-[#f3f4f2]' : ''
+                            page.username === currentBioPageUsername
+                              ? "bg-[#f3f4f2]"
+                              : ""
                           }`}
                         >
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#e0e2d9] flex items-center justify-center">
@@ -225,13 +234,18 @@ export default function Dashboard({
                               />
                             ) : (
                               <span className="text-sm text-[#676b5f]">
-                                {page.displayName?.[0]?.toUpperCase() || page.username?.[0]?.toUpperCase()}
+                                {page.displayName?.[0]?.toUpperCase() ||
+                                  page.username?.[0]?.toUpperCase()}
                               </span>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-black truncate">{page.displayName}</p>
-                            <p className="text-sm text-[#676b5f]">@{page.username}</p>
+                            <p className="text-black truncate">
+                              {page.displayName}
+                            </p>
+                            <p className="text-sm text-[#676b5f]">
+                              @{page.username}
+                            </p>
                           </div>
                         </button>
                       ))
@@ -261,12 +275,12 @@ export default function Dashboard({
         <div className="grid grid-cols-[1fr_400px] gap-8">
           {/* Left Side */}
           <div>
-            {currentTab === 'Links' && (
+            {currentTab === "Links" && (
               <LinkEditor
                 links={mappedLinks as any}
                 user={{ username: currentBioPageUsername, email: userEmail }}
-                profileImage={bioPage.avatarUrl || ''}
-                bio={bioPage.bioDescription || ''}
+                profileImage={bioPage.avatarUrl || ""}
+                bio={bioPage.bioDescription || ""}
                 onAddLink={addLink}
                 onUpdateLink={updateLink}
                 onDeleteLink={deleteLink}
@@ -275,7 +289,7 @@ export default function Dashboard({
                 onUpdateProfile={handleSaveProfile}
               />
             )}
-            {currentTab === 'Appearance' && (
+            {currentTab === "Appearance" && (
               <Appearance
                 username={currentBioPageUsername}
                 onConfigChange={(config: AppearanceConfig) => {
@@ -285,10 +299,13 @@ export default function Dashboard({
                 }}
               />
             )}
-            {currentTab === 'Analytics' && (
-              <Analytics username={currentBioPageUsername} links={mappedLinks} />
+            {currentTab === "Analytics" && (
+              <Analytics
+                username={currentBioPageUsername}
+                links={mappedLinks}
+              />
             )}
-            {currentTab === 'Settings' && (
+            {currentTab === "Settings" && (
               <Settings
                 user={{ username: currentBioPageUsername, email: userEmail }}
                 onLogout={onLogout}
@@ -303,11 +320,15 @@ export default function Dashboard({
             <PhonePreview
               username={currentBioPageUsername}
               name={bioPage.displayName || currentBioPageUsername}
-              bio={bioPage.bioDescription || ''}
-              profileImage={bioPage.avatarUrl || ''}
+              bio={bioPage.bioDescription || ""}
+              profileImage={bioPage.avatarUrl || ""}
               links={mappedLinks.filter((link) => link.isActive) as any}
               blocks={blocks as any}
-              appearanceConfig={bioPage.themeConfig ? themeConfigToAppearance(bioPage.themeConfig) : undefined}
+              appearanceConfig={
+                bioPage.themeConfig
+                  ? themeConfigToAppearance(bioPage.themeConfig)
+                  : undefined
+              }
               hideVielinkLogo={bioPage.settings?.hideVielinkLogo || false}
             />
           </div>
@@ -323,8 +344,12 @@ export default function Dashboard({
         }}
       >
         <DialogContent className="sm:max-w-[500px]">
-          <DialogTitle className="text-center text-2xl">Share your Linktree</DialogTitle>
-          <DialogDescription className="text-center">Scan QR code</DialogDescription>
+          <DialogTitle className="text-center text-2xl">
+            Share your Linktree
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            Scan QR code
+          </DialogDescription>
           <div className="flex flex-col items-center gap-6 py-4">
             <div
               className="bg-white p-6 rounded-2xl border-2 border-[#e0e2d9] shadow-sm"
@@ -345,7 +370,11 @@ export default function Dashboard({
                 className="flex-1 bg-transparent text-black text-sm outline-none"
               />
               <button
-                onClick={() => copyToClipboard(`https://vielink.vn/${currentBioPageUsername}`)}
+                onClick={() =>
+                  copyToClipboard(
+                    `https://vielink.vn/${currentBioPageUsername}`
+                  )
+                }
                 className="flex items-center gap-2 bg-[#8129d9] text-white px-4 py-2 rounded-full"
               >
                 {copiedLink ? <CheckCheck size={16} /> : <Copy size={16} />}
@@ -363,4 +392,3 @@ export default function Dashboard({
     </div>
   );
 }
-
