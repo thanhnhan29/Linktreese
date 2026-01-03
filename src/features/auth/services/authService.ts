@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendEmailVerification,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '@/infrastructure/firebase';
@@ -20,10 +21,12 @@ export interface LoginResult {
   user: AuthUser;
   hasExistingPage: boolean;
   firstPageUsername?: string;
+  isEmailVerified: boolean;
 }
 
 export interface SignupResult {
   user: AuthUser;
+  emailSent: boolean;
 }
 
 class AuthService {
@@ -45,10 +48,20 @@ class AuthService {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
+      // Check if email is verified
+      if (!firebaseUser.emailVerified) {
+        // Sign out immediately - don't allow unverified users
+        await signOut(auth);
+        throw new ValidationError('Please verify your email before signing in. Check your inbox for the verification link.');
+      }
+
       const authUser: AuthUser = {
         uid: firebaseUser.uid,
         email: firebaseUser.email!,
       };
+
+      // Update Firestore emailVerified status (in case it wasn't updated during verification)
+      await userRepository.update(firebaseUser.uid, { emailVerified: true });
 
       // Check if user has existing bio pages
       const bioPages = await bioPageRepository.findByUserId(firebaseUser.uid);
@@ -57,6 +70,7 @@ class AuthService {
         user: authUser,
         hasExistingPage: bioPages.length > 0,
         firstPageUsername: bioPages[0]?.username,
+        isEmailVerified: firebaseUser.emailVerified,
       };
     } catch (error) {
       throw new AuthenticationError('Incorrect email or password');
@@ -86,13 +100,28 @@ class AuthService {
       await userRepository.create(firebaseUser.uid, {
         email: firebaseUser.email!,
         authProvider: 'email',
+        emailVerified: false,
       });
+
+      // Send email verification
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      console.log('Sending verification email with redirect URL:', currentOrigin);
+      const actionCodeSettings = {
+        url: `${currentOrigin}/?verified=true`,
+        handleCodeInApp: false, // Let Firebase handle it and redirect back with oobCode
+      };
+      await sendEmailVerification(firebaseUser, actionCodeSettings);
+      console.log('Verification email sent successfully');
+
+      // Sign out immediately so user can't proceed until email is verified
+      await signOut(auth);
 
       return {
         user: {
           uid: firebaseUser.uid,
           email: firebaseUser.email!,
         },
+        emailSent: true,
       };
     } catch (error: unknown) {
       const firebaseError = error as { code?: string };
@@ -129,12 +158,17 @@ class AuthService {
    */
   onAuthStateChange(callback: (user: AuthUser | null) => void): () => void {
     return onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser && firebaseUser.email) {
+      // Only treat the user as authenticated in the app when their email is verified.
+      // This prevents transient authenticated state (e.g. immediately after signup
+      // before the verification step completes) from allowing access or navigation.
+      if (firebaseUser && firebaseUser.email && firebaseUser.emailVerified) {
         callback({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
         });
       } else {
+        // For unverified users or signed-out state, report null so the app treats
+        // them as unauthenticated.
         callback(null);
       }
     });

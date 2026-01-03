@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import svgPaths from "../imports/svg-du8004kdwc";
 
 // interface SignupPageProps {
@@ -7,12 +7,13 @@ import svgPaths from "../imports/svg-du8004kdwc";
 // }
 
 interface SignupPageProps {
-  // Update return type to Promise<void> or Promise<any>
-  onSignup: (email: string, password: string) => Promise<any>;
+  // Return type indicates whether verification email was sent
+  onSignup: (email: string, password: string) => Promise<{ emailSent: boolean }>;
   onSwitchToLogin: () => void;
 }
 
 export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProps) {
+  console.log('=== SignupPage RENDER ===');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,6 +21,16 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  // random debug line to ensure correct signup screen loaded
+  const [debugLine, setDebugLine] = useState('');
+
+  useEffect(() => {
+    const token = Math.random().toString(36).slice(2, 9);
+    const ts = Date.now().toString(36).slice(-6);
+    setDebugLine(`signup-debug-${ts}-${token}`);
+    console.log('SignupPage debugLine:', `signup-debug-${ts}-${token}`);
+  }, []);
 
   const EXISTING_EMAILS = ['abc@gmail.com'];
 
@@ -86,6 +97,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== SignupPage handleSubmit called ===');
     
     let hasError = false;
 
@@ -128,9 +140,16 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
     if (hasError) return;
 
     // 4. Attempt Signup
+    console.log('No validation errors, calling onSignup...');
     try {
-      await onSignup(email, password);
+      const result = await onSignup(email, password);
+      console.log('onSignup returned:', result);
+      if (result?.emailSent) {
+        console.log('Setting emailSent to true');
+        setEmailSent(true);
+      }
     } catch (error: any) {
+      console.log('Signup error:', error);
       if (error.code === 'auth/email-already-in-use') {
         setEmailError('This email is already registered');
       } else {
@@ -163,14 +182,44 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
         </svg>
       </div>
 
-      {/* Signup Form */}
+      {/* Signup Form or Email Sent Message */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[592px]">
-        <h1 className="font-['Inter'] tracking-[-2px] text-black mb-6 text-[24px]">Tell us about yourself</h1>
-        <p className="tracking-[-0.32px] text-[#676b5f] mb-12">
-          For a personalized Linktree experience
-        </p>
+        {emailSent ? (
+          // Email sent confirmation
+          <div className="text-center">
+            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#8129d9]/10">
+              <svg className="h-8 w-8 text-[#8129d9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="font-['Inter'] tracking-[-2px] text-black mb-4 text-[24px]">Check your email</h1>
+            <p className="tracking-[-0.32px] text-[#676b5f] mb-8">
+              We've sent a verification link to <span className="font-semibold text-black">{email}</span>. 
+              Please check your inbox and click the link to verify your account.
+            </p>
+            <div className="bg-[#f6f7f5] rounded-[8px] p-4 mb-8">
+              <p className="text-[14px] text-[#676b5f]">
+                <strong>Note:</strong> The link will expire in 1 hour. If you don't see the email, check your spam folder.
+              </p>
+            </div>
+            <button
+              onClick={onSwitchToLogin}
+              className="text-[#8129d9] hover:underline text-[16px]"
+            >
+              Already verified? Sign in
+            </button>
+          </div>
+        ) : (
+          // Signup form
+          <>
+            {/* visible debug line to confirm this screen is active */}
+            <div className="text-sm text-gray-500 mb-4">{debugLine}</div>
+            <h1 className="font-['Inter'] tracking-[-2px] text-black mb-6 text-[24px]">Tell us about yourself</h1>
+            <p className="tracking-[-0.32px] text-[#676b5f] mb-12">
+              For a personalized Linktree experience
+            </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email */}
           <div>
             <input
@@ -264,6 +313,8 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
             </p>
           </div>
         </form>
+          </>
+        )}
       </div>
     </div>
   );

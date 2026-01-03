@@ -31,8 +31,14 @@ export function App() {
     async (email: string, password: string) => {
       const result = await login(email, password);
 
-      // After login show dashboard selector — user picks page or creates new
-      navigate("/dashboard");
+      // After login decide where to send the user:
+      // - if they have existing pages, go to their first page dashboard
+      // - otherwise send them to create-username
+      if (result?.hasExistingPage && result.firstPageUsername) {
+        navigate(`/dashboard/${result.firstPageUsername}`);
+      } else {
+        navigate("/create-username");
+      }
     },
     [login, navigate]
   );
@@ -40,10 +46,12 @@ export function App() {
   // Handle signup with navigation
   const handleSignup = useCallback(
     async (email: string, password: string) => {
-      await signup(email, password);
-      navigate("/create-username");
+      const result = await signup(email, password);
+      // Don't navigate - user needs to verify email first
+      // SignupForm will show "check your email" message
+      return result;
     },
-    [signup, navigate]
+    [signup]
   );
 
   // Handle username creation with navigation
@@ -74,6 +82,19 @@ export function App() {
     navigate("/login");
     toast.success("You have been logged out");
   }, [logout, navigate]);
+
+  // Handle redirect after email verification (Firebase handles verification, just show success)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get('verified');
+    
+    if (verified === 'true') {
+      // User was redirected after verifying email via Firebase's hosted page
+      window.history.replaceState({}, document.title, '/login');
+      toast.success('Email verified successfully! Please sign in.');
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
 
   // Auto-redirect authenticated users from login/signup pages
   useEffect(() => {

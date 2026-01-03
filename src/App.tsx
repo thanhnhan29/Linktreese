@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendEmailVerification, applyActionCode } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { createUser as createUserDoc, createBioPage } from './lib/firestoreSchemas';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { userRepository } from '@/infrastructure/repositories';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
@@ -17,6 +19,10 @@ interface AppUser {
   email: string;
   uid: string;
 }
+
+// Global flag to prevent auth state changes during signup
+// Using a module-level variable because React state/ref won't work with the closure in onAuthStateChanged
+let isSignupInProgress = false;
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('login');
@@ -69,6 +75,38 @@ export default function App() {
   //   }
   // }, []);
   useEffect(() => {
+    // Check if URL contains oobCode parameter for email verification
+    const urlParams = new URLSearchParams(window.location.search);
+    const oobCode = urlParams.get('oobCode');
+    const mode = urlParams.get('mode');
+    
+    // If verification link was clicked, verify email and redirect to login
+    if (oobCode && mode === 'verifyEmail') {
+      const verifyEmail = async () => {
+        try {
+          await applyActionCode(auth, oobCode);
+          
+          // Get the user's email from the URL (continueUrl contains it)
+          // We need to update Firestore directly since user is not signed in
+          // First, try to find the user by checking who just got verified
+          // We'll update on next login instead
+          
+          // Clean URL and show login
+          window.history.replaceState({}, document.title, '/');
+          alert('Email verified successfully! Please sign in.');
+          setCurrentPage('login');
+        } catch (error: any) {
+          console.error('Verification error:', error);
+          window.history.replaceState({}, document.title, '/');
+          alert('Verification failed: ' + (error.message || 'Please try again or request a new link.'));
+          setCurrentPage('login');
+        }
+      };
+      
+      verifyEmail();
+      return; // Don't run the rest of the effect
+    }
+
     let unsubscribeFn: (() => void) | null = null;
 
     const initAuth = async () => {
@@ -76,7 +114,23 @@ export default function App() {
       clearAppLocalStorage(); 
 
       unsubscribeFn = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.log('=== onAuthStateChanged fired ===');
+        console.log('isSignupInProgress:', isSignupInProgress);
+        console.log('firebaseUser:', firebaseUser?.email || 'null');
+        
+        // Skip auto-redirect if user is pending email verification
+        if (isSignupInProgress) {
+          console.log('SKIPPING - signup in progress');
+          return;
+        }
+        
         if (firebaseUser && firebaseUser.email) {
+          // If the user's email is not verified yet, do not auto-redirect them to create-username.
+          // This prevents newly-created-but-unverified accounts from being treated as fully active.
+          if (!firebaseUser.emailVerified) {
+            console.log('Auth state: user signed in but email not verified yet. Skipping redirect.');
+            return;
+          }
           // Lưu thông tin user bao gồm cả UID
           const userData: AppUser = { 
             email: firebaseUser.email, 
@@ -185,7 +239,19 @@ export default function App() {
   // };
   const handleLogin = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Sync emailVerified status from Firebase Auth to Firestore
+      if (firebaseUser.emailVerified) {
+        try {
+          await userRepository.update(firebaseUser.uid, { emailVerified: true });
+          console.log('Updated Firestore emailVerified to true');
+        } catch (err) {
+          console.error('Failed to update emailVerified in Firestore:', err);
+        }
+      }
+      
       // Firebase listener in useEffect will handle the state updates
       return true;
     } catch (error) {
@@ -214,10 +280,18 @@ export default function App() {
   //   setIsFirstTimeUser(true);
   //   setCurrentPage('create-username');
   // };
-  const handleSignup = async (email: string, password: string) => {
+  const handleSignup = async (email: string, password: string): Promise<{ emailSent: boolean }> => {
+    // Set flag FIRST to prevent onAuthStateChanged from redirecting
+    console.log('=== handleSignup called ===');
+    console.log('Setting isSignupInProgress to true');
+    isSignupInProgress = true;
+    
     try {
+      console.log('Calling createUserWithEmailAndPassword...');
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('User created, uid:', userCredential.user?.uid);
       const uid = userCredential.user?.uid;
+      const firebaseUser = userCredential.user;
 
       // Initialize empty bio pages array for this email
       localStorage.setItem(`bioPages_${email}`, JSON.stringify([]));
@@ -225,11 +299,29 @@ export default function App() {
       // Also create a Firestore `users/{uid}` document so the user shows up in Firestore.
       if (uid) {
         await createUserDoc(uid, { email });
+        
+        // Update Firestore with emailVerified status
+        await userRepository.update(uid, { emailVerified: false });
       }
 
-      // Firebase listener will handle the rest
+      // Send verification email - use current origin so it works on any port
+      const currentOrigin = window.location.origin; // e.g., http://localhost:3001
+      const actionCodeSettings = {
+        url: currentOrigin,
+        handleCodeInApp: true,
+      };
+      console.log('Sending verification email with URL:', currentOrigin);
+      await sendEmailVerification(firebaseUser, actionCodeSettings);
+
+      // Sign out so user can't proceed until verified
+      await signOut(auth);
+      console.log('User signed out after signup');
+
+      // isSignupInProgress stays true so the page stays on signup with "check email" message
+      return { emailSent: true };
     } catch (error) {
       console.error("Signup failed", error);
+      isSignupInProgress = false; // Reset on error so they can try again
       throw error;
     }
   };
@@ -296,7 +388,10 @@ export default function App() {
       <>
         <SignupPage 
           onSignup={handleSignup}
-          onSwitchToLogin={() => setCurrentPage('login')}
+          onSwitchToLogin={() => {
+            isSignupInProgress = false; // Clear flag when switching to login
+            setCurrentPage('login');
+          }}
         />
         <Toaster />
       </>
@@ -339,7 +434,10 @@ export default function App() {
     return (
       <>
         <ForgotPasswordPage 
-          onSwitchToLogin={() => setCurrentPage('login')}
+          onSwitchToLogin={() => {
+            isSignupInProgress = false; // Clear flag when switching to login
+            setCurrentPage('login');
+          }}
           onSwitchToResetPassword={() => setCurrentPage('reset-password')}
         />
         <Toaster />

@@ -1,17 +1,27 @@
 // src/features/auth/components/SignupForm.tsx
 // Signup form component (preserves original UI)
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { validateEmail, validatePassword } from '@/shared/lib/validation';
 import { getErrorMessage } from '@/shared/lib/errors';
 import svgPaths from '@/imports/svg-du8004kdwc';
 
 interface SignupFormProps {
-  onSignup: (email: string, password: string) => Promise<void>;
+  onSignup: (email: string, password: string) => Promise<{ emailSent?: boolean } | void>;
   onSwitchToLogin: () => void;
 }
 
 export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
+  // visible debug line to confirm this component is the one rendering for /register
+  const [debugLine, setDebugLine] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  useEffect(() => {
+    const token = Math.random().toString(36).slice(2, 9);
+    const ts = Date.now().toString(36).slice(-6);
+    const line = `signupform-debug-${ts}-${token}`;
+    setDebugLine(line);
+    console.log('SignupForm debugLine:', line);
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -106,7 +116,10 @@ export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
     setIsSubmitting(true);
     
     try {
-      await onSignup(email, password);
+      const result = await onSignup(email, password);
+      if (result && 'emailSent' in result && result.emailSent) {
+        setEmailSent(true);
+      }
     } catch (error) {
       const message = getErrorMessage(error);
       setEmailError(message);
@@ -133,16 +146,48 @@ export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
         </svg>
       </div>
 
-      {/* Signup Form */}
+      {/* Signup Form or Email Sent Message */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[592px]">
-        <h1 className="font-['Inter'] tracking-[-2px] text-black mb-6 text-[24px]">
-          Tell us about yourself
-        </h1>
-        <p className="tracking-[-0.32px] text-[#676b5f] mb-12">
-          For a personalized Linktree experience
-        </p>
+        {/* Debug line to identify this signup UI */}
+        <div className="text-sm text-gray-500 mb-2">{debugLine}</div>
+        
+        {emailSent ? (
+          // Email sent confirmation
+          <div className="text-center">
+            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#8129d9]/10">
+              <svg className="h-8 w-8 text-[#8129d9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="font-['Inter'] tracking-[-2px] text-black mb-4 text-[24px]">
+              Check your email
+            </h1>
+            <p className="tracking-[-0.32px] text-[#676b5f] mb-8">
+              We've sent a verification link to <strong>{email}</strong>. 
+              Please click the link to verify your email address.
+            </p>
+            <p className="text-sm text-[#676b5f] mb-8">
+              After verifying, you can sign in to continue.
+            </p>
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="bg-[#8129d9] text-white rounded-[64px] px-8 py-3 tracking-[-0.32px] hover:bg-[#7020c0] transition-colors text-center"
+            >
+              Go to Sign In
+            </button>
+          </div>
+        ) : (
+          // Signup form
+          <>
+            <h1 className="font-['Inter'] tracking-[-2px] text-black mb-6 text-[24px]">
+              Tell us about yourself
+            </h1>
+            <p className="tracking-[-0.32px] text-[#676b5f] mb-12">
+              For a personalized Linktree experience
+            </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email */}
           <div>
             <input
@@ -241,6 +286,8 @@ export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
             </p>
           </div>
         </form>
+          </>
+        )}
       </div>
     </div>
   );

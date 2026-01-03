@@ -6,10 +6,11 @@ import { authService } from '../services/authService';
 import { clearAppLocalStorage } from '@/shared/lib/utils';
 import type { AuthUser, AuthState } from '../types';
 import type { BioPage } from '@/shared/types';
+import type { SignupResult } from '../services/authService';
 
 interface UseAuthReturn extends AuthState {
   login: (email: string, password: string) => Promise<{ hasExistingPage: boolean; firstPageUsername?: string }>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<SignupResult>;
   logout: () => Promise<void>;
   checkUserPages: () => Promise<{ hasPages: boolean; pages: BioPage[] }>;
 }
@@ -40,7 +41,7 @@ export function useAuthProvider(): UseAuthReturn {
   }, []);
 
   const signup = useCallback(async (email: string, password: string) => {
-    await authService.signup(email, password);
+    return await authService.signup(email, password);
   }, []);
 
   const logout = useCallback(async () => {
