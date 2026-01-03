@@ -271,7 +271,9 @@ export default function Analytics({
 
           {/* Chart 2: Click Through Rate (%) */}
           <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-            <h3 className="text-black mb-4">Click Through Rate (CTR) Over Time</h3>
+            <h3 className="text-black mb-4">
+              Click Through Rate (CTR) Over Time
+            </h3>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={analytics?.dailyData || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e2d9" />

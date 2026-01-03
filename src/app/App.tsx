@@ -5,11 +5,11 @@ import { useEffect, useCallback } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth, LoginForm, SignupForm } from "@/features/auth";
 import {
-    CreateUsernameForm,
-    Dashboard,
-    PublicBioPage,
-    bioPageService,
-  } from "@/features/bio-page";
+  CreateUsernameForm,
+  Dashboard,
+  PublicBioPage,
+  bioPageService,
+} from "@/features/bio-page";
 import { LoadingScreen, ProtectedRoute } from "@/shared/components";
 import { isFirebaseConfigured } from "@/infrastructure/firebase";
 import { toast } from "sonner";

@@ -2,7 +2,7 @@
 // Analytics feature public API
 
 // Services
-export { analyticsService } from './services/analyticsService';
+export { analyticsService } from "./services/analyticsService";
 
 // Hooks
 export {
@@ -10,7 +10,7 @@ export {
   useTrackPageView,
   useTrackLinkClick,
   useTrackBlockClick,
-} from './hooks/useAnalytics';
+} from "./hooks/useAnalytics";
 
 // Types
 export type {
@@ -23,4 +23,4 @@ export type {
   TrafficSource,
   TrackPageViewInput,
   TrackClickInput,
-} from '@/shared/types/analytics';
+} from "@/shared/types/analytics";
