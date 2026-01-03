@@ -1,14 +1,23 @@
 // src/features/auth/hooks/useAuth.ts
 // Main auth hook for accessing auth state and actions
 
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { authService } from '../services/authService';
-import { clearAppLocalStorage } from '@/shared/lib/utils';
-import type { AuthUser, AuthState } from '../types';
-import type { BioPage } from '@/shared/types';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+} from "react";
+import { authService } from "../services/authService";
+import { clearAppLocalStorage } from "@/shared/lib/utils";
+import type { AuthUser, AuthState } from "../types";
+import type { BioPage } from "@/shared/types";
 
 interface UseAuthReturn extends AuthState {
-  login: (email: string, password: string) => Promise<{ hasExistingPage: boolean; firstPageUsername?: string }>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ hasExistingPage: boolean; firstPageUsername?: string }>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkUserPages: () => Promise<{ hasPages: boolean; pages: BioPage[] }>;
@@ -72,8 +81,7 @@ export const AuthContext = createContext<UseAuthReturn | null>(null);
 export function useAuth(): UseAuthReturn {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
-
