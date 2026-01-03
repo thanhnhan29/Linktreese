@@ -1,6 +1,17 @@
-import { Instagram, Send, Facebook, Twitter, Hash, MessageCircle, Phone, MessageSquare, Twitch, Youtube } from 'lucide-react';
-import type { Block } from './Blocks';
-import BlockPreview from './BlockPreview';
+import {
+  Instagram,
+  Send,
+  Facebook,
+  Twitter,
+  Hash,
+  MessageCircle,
+  Phone,
+  MessageSquare,
+  Twitch,
+  Youtube,
+} from "lucide-react";
+import type { Block } from "./Blocks";
+import BlockPreview from "./BlockPreview";
 
 interface Link {
   id: string;
@@ -14,15 +25,15 @@ interface Link {
 
 interface AppearanceConfig {
   background: {
-    type: 'solid' | 'gradient' | 'image';
+    type: "solid" | "gradient" | "image";
     solidColor: string;
     gradientStart: string;
     gradientEnd: string;
-    gradientDirection: 'to-b' | 'to-t' | 'to-r' | 'to-l' | 'to-br' | 'to-bl';
+    gradientDirection: "to-b" | "to-t" | "to-r" | "to-l" | "to-br" | "to-bl";
     imageUrl: string;
   };
   buttons: {
-    style: 'rounded' | 'square' | 'pill';
+    style: "rounded" | "square" | "pill";
     backgroundColor: string;
     textColor: string;
     borderColor: string;
@@ -49,24 +60,37 @@ interface PhonePreviewProps {
   blocks?: Block[];
 }
 
-const trackLinkClick = (username: string, linkId: string, linkTitle: string) => {
+const trackLinkClick = (
+  username: string,
+  linkId: string,
+  linkTitle: string
+) => {
   const clickData = {
     linkId,
     linkTitle,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
-  
+
   try {
     const savedClicks = localStorage.getItem(`analytics_${username}`);
     const clicks = savedClicks ? JSON.parse(savedClicks) : [];
     clicks.push(clickData);
     localStorage.setItem(`analytics_${username}`, JSON.stringify(clicks));
   } catch (e) {
-    console.error('Error tracking click', e);
+    console.error("Error tracking click", e);
   }
 };
 
-export default function PhonePreview({ username, name, bio, profileImage, links, appearanceConfig, hideVielinkLogo, blocks = [] }: PhonePreviewProps) {
+export default function PhonePreview({
+  username,
+  name,
+  bio,
+  profileImage,
+  links,
+  appearanceConfig,
+  hideVielinkLogo,
+  blocks = [],
+}: PhonePreviewProps) {
   const handleLinkClick = (link: Link) => {
     trackLinkClick(username, link.id, link.title);
   };
@@ -75,36 +99,39 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
   const getBackgroundStyle = () => {
     // FIX: Kiểm tra kỹ nếu không có background object
     if (!appearanceConfig || !appearanceConfig.background) {
-        return { backgroundColor: '#ffffff' };
+      return { backgroundColor: "#ffffff" };
     }
 
     const { background } = appearanceConfig;
-    
-    if (background.type === 'solid') {
-      return { backgroundColor: background.solidColor || '#ffffff' };
-    } else if (background.type === 'gradient') {
+
+    if (background.type === "solid") {
+      return { backgroundColor: background.solidColor || "#ffffff" };
+    } else if (background.type === "gradient") {
       const directionMap: Record<string, string> = {
-        'to-b': 'to bottom',
-        'to-t': 'to top',
-        'to-r': 'to right',
-        'to-l': 'to left',
-        'to-br': 'to bottom right',
-        'to-bl': 'to bottom left'
+        "to-b": "to bottom",
+        "to-t": "to top",
+        "to-r": "to right",
+        "to-l": "to left",
+        "to-br": "to bottom right",
+        "to-bl": "to bottom left",
       };
-      const direction = directionMap[background.gradientDirection] || 'to bottom';
+      const direction =
+        directionMap[background.gradientDirection] || "to bottom";
       return {
-        background: `linear-gradient(${direction}, ${background.gradientStart || '#ffffff'}, ${background.gradientEnd || '#ffffff'})`
+        background: `linear-gradient(${direction}, ${
+          background.gradientStart || "#ffffff"
+        }, ${background.gradientEnd || "#ffffff"})`,
       };
-    } else if (background.type === 'image' && background.imageUrl) {
+    } else if (background.type === "image" && background.imageUrl) {
       return {
         backgroundImage: `url(${background.imageUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       };
     }
-    
-    return { backgroundColor: '#ffffff' };
+
+    return { backgroundColor: "#ffffff" };
   };
 
   // Get button styles
@@ -112,60 +139,66 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
     // FIX: Kiểm tra kỹ nếu không có buttons object
     if (!appearanceConfig || !appearanceConfig.buttons) {
       return {
-        backgroundColor: 'white',
-        border: '2px solid black',
-        borderRadius: '50px',
-        color: 'black'
+        backgroundColor: "white",
+        border: "2px solid black",
+        borderRadius: "50px",
+        color: "black",
       };
     }
 
     const { buttons } = appearanceConfig;
-    
-    const borderRadius = buttons.style === 'rounded' ? '8px' : buttons.style === 'square' ? '0px' : '50px';
-    
+
+    const borderRadius =
+      buttons.style === "rounded"
+        ? "8px"
+        : buttons.style === "square"
+        ? "0px"
+        : "50px";
+
     return {
-      backgroundColor: buttons.backgroundColor || '#ffffff',
-      color: buttons.textColor || '#000000',
-      border: `2px solid ${buttons.borderColor || '#000000'}`,
+      backgroundColor: buttons.backgroundColor || "#ffffff",
+      color: buttons.textColor || "#000000",
+      border: `2px solid ${buttons.borderColor || "#000000"}`,
       borderRadius,
-      boxShadow: buttons.hasShadow ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none'
+      boxShadow: buttons.hasShadow ? "0 4px 6px rgba(0, 0, 0, 0.1)" : "none",
     };
   };
 
   // Get font styles
-  const getFontFamily = (type: 'heading' | 'body') => {
+  const getFontFamily = (type: "heading" | "body") => {
     // FIX: Kiểm tra kỹ nếu không có fonts object
-    if (!appearanceConfig || !appearanceConfig.fonts) return 'Inter, sans-serif';
+    if (!appearanceConfig || !appearanceConfig.fonts)
+      return "Inter, sans-serif";
     return `${appearanceConfig.fonts[type]}, sans-serif`;
   };
 
   // Get social media icon
   const getSocialIcon = (platform: string | undefined) => {
     if (!platform) return null;
-    
+
     const iconProps = { className: "w-5 h-5", strokeWidth: 2 };
-    
+
     switch (platform.toLowerCase()) {
-      case 'instagram':
+      case "instagram":
         return <Instagram {...iconProps} />;
-      case 'tiktok':
+      case "tiktok":
         return <Send {...iconProps} />;
-      case 'facebook':
+      case "facebook":
         return <Facebook {...iconProps} />;
-      case 'x':
-      case 'twitter':
+      case "x":
+      case "twitter":
         return <Twitter {...iconProps} />;
-      case 'pinterest':
+      case "pinterest":
         return <Hash {...iconProps} />;
-      case 'snapchat':
+      case "snapchat":
         return <MessageCircle {...iconProps} />;
-      case 'whatsapp':
+      case "whatsapp":
         return <Phone {...iconProps} />;
-      case 'reddit':
+      case "reddit":
         return <MessageSquare {...iconProps} />;
-      case 'twitch':
+      case "twitch":
         return <Twitch {...iconProps} />;
-      case 'youtube':
+      case "youtube":
         return <Youtube {...iconProps} />;
       default:
         return null;
@@ -174,7 +207,7 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
 
   const renderBlock = (block: Block) => {
     const buttonStyle = getButtonStyle({} as Link);
-    const fontFamily = getFontFamily('body');
+    const fontFamily = getFontFamily("body");
 
     return (
       <BlockPreview
@@ -189,10 +222,10 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
   return (
     <div className="flex flex-col items-center">
       <p className="mb-4 text-[#676b5f]">Live Preview</p>
-      
+
       {/* Phone Frame */}
       <div className="relative bg-black rounded-[40px] p-3 shadow-2xl">
-        <div 
+        <div
           className="rounded-[32px] w-[340px] h-[680px] overflow-hidden"
           style={getBackgroundStyle()}
         >
@@ -202,20 +235,27 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
               {/* Profile Image */}
               <div className="w-24 h-24 bg-[#e0e2d9] rounded-full mb-4 overflow-hidden flex items-center justify-center">
                 {profileImage ? (
-                  <img src={profileImage} alt={name} className="w-full h-full object-cover" />
+                  <img
+                    src={profileImage}
+                    alt={name}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <span className="text-[#676b5f]" style={{ fontFamily: getFontFamily('heading') }}>
-                    {name ? name[0]?.toUpperCase() : '?'}
+                  <span
+                    className="text-[#676b5f]"
+                    style={{ fontFamily: getFontFamily("heading") }}
+                  >
+                    {name ? name[0]?.toUpperCase() : "?"}
                   </span>
                 )}
               </div>
 
               {/* Username */}
-              <h2 
+              <h2
                 className="mb-2"
-                style={{ 
-                  fontFamily: getFontFamily('heading'),
-                  color: appearanceConfig?.textColors?.username || '#000000'
+                style={{
+                  fontFamily: getFontFamily("heading"),
+                  color: appearanceConfig?.textColors?.username || "#000000",
                 }}
               >
                 @{username}
@@ -223,11 +263,11 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
 
               {/* Display Name */}
               {name !== username && (
-                <p 
+                <p
                   className="mb-2"
-                  style={{ 
-                    fontFamily: getFontFamily('body'),
-                    color: appearanceConfig?.textColors?.username || '#000000'
+                  style={{
+                    fontFamily: getFontFamily("body"),
+                    color: appearanceConfig?.textColors?.username || "#000000",
                   }}
                 >
                   {name}
@@ -236,13 +276,14 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
 
               {/* Bio */}
               {bio && (
-                <p 
+                <p
                   className="text-center mb-6 w-full break-words whitespace-pre-wrap overflow-hidden"
-                  style={{ 
-                    fontFamily: getFontFamily('body'),
-                    color: appearanceConfig?.textColors?.description || '#676b5f',
-                    wordBreak: 'break-word',
-                    overflowWrap: 'anywhere',
+                  style={{
+                    fontFamily: getFontFamily("body"),
+                    color:
+                      appearanceConfig?.textColors?.description || "#676b5f",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
                   }}
                 >
                   {bio}
@@ -253,9 +294,9 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
               <div className="w-full space-y-3">
                 {links.length === 0 && blocks.length === 0 ? (
                   <div className="text-center py-8">
-                    <p 
+                    <p
                       className="text-[#676b5f]"
-                      style={{ fontFamily: getFontFamily('body') }}
+                      style={{ fontFamily: getFontFamily("body") }}
                     >
                       Your links will appear here
                     </p>
@@ -263,18 +304,23 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
                 ) : (
                   links.map((link) => {
                     // Check if this is a special block type
-                    if (link.type === 'ecommerce' || link.type === 'donate' || link.type === 'contact' || link.type === 'chat') {
+                    if (
+                      link.type === "ecommerce" ||
+                      link.type === "donate" ||
+                      link.type === "contact" ||
+                      link.type === "chat"
+                    ) {
                       const blockData: Block = {
                         id: link.id,
                         type: link.type as any,
                         data: link.data,
                         isActive: link.isActive,
-                        order: 0
+                        order: 0,
                       };
-                      
+
                       const buttonStyle = getButtonStyle(link);
-                      const fontFamily = getFontFamily('body');
-                      
+                      const fontFamily = getFontFamily("body");
+
                       return (
                         <BlockPreview
                           key={link.id}
@@ -284,7 +330,7 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
                         />
                       );
                     }
-                    
+
                     // Regular social/link rendering
                     const socialIcon = getSocialIcon(link.platform);
                     return (
@@ -297,7 +343,7 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
                         className="flex items-center justify-center gap-2 w-full px-6 py-3 transition-opacity hover:opacity-80"
                         style={{
                           ...getButtonStyle(link),
-                          fontFamily: getFontFamily('body')
+                          fontFamily: getFontFamily("body"),
                         }}
                       >
                         {socialIcon}
@@ -318,11 +364,12 @@ export default function PhonePreview({ username, name, bio, profileImage, links,
               {/* VieLink Footer - Hidden for PRO users */}
               {!hideVielinkLogo && (
                 <div className="mt-8 pt-6 border-t border-white/20">
-                  <p 
+                  <p
                     className="text-center text-xs opacity-60"
-                    style={{ 
-                      fontFamily: getFontFamily('body'),
-                      color: appearanceConfig?.textColors?.description || '#676b5f'
+                    style={{
+                      fontFamily: getFontFamily("body"),
+                      color:
+                        appearanceConfig?.textColors?.description || "#676b5f",
                     }}
                   >
                     Powered by <span className="font-medium">VieLink</span>

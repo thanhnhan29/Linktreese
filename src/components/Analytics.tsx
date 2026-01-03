@@ -12,10 +12,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import {
-  MousePointer,
-  Share2,
-} from "lucide-react";
+import { MousePointer, Share2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -52,21 +49,14 @@ interface AnalyticsProps {
   links: Array<{ id: string; title: string }>;
 }
 
-export default function Analytics({
-  username,
-  links,
-}: AnalyticsProps) {
+export default function Analytics({ username, links }: AnalyticsProps) {
   const [dateRange, setDateRange] = useState("7");
-  const [analyticsData, setAnalyticsData] = useState<
-    AnalyticsData[]
-  >([]);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
   const [linkClicks, setLinkClicks] = useState<LinkClick[]>([]);
 
   useEffect(() => {
     // Load click data from localStorage
-    const savedClicks = localStorage.getItem(
-      `analytics_${username}`,
-    );
+    const savedClicks = localStorage.getItem(`analytics_${username}`);
     if (savedClicks) {
       setLinkClicks(JSON.parse(savedClicks));
     }
@@ -88,8 +78,7 @@ export default function Analytics({
       const uniqueViews = Math.floor(totalViews * 0.7);
       const totalClicks = Math.floor(Math.random() * 50) + 10;
       const uniqueClicks = Math.floor(totalClicks * 0.8);
-      const ctr =
-        totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
+      const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
 
       data.push({
         date: formatDate(date),
@@ -111,13 +100,10 @@ export default function Analytics({
   };
 
   const stats = useMemo(() => {
-    const totalViews = analyticsData.reduce(
-      (sum, d) => sum + d.totalViews,
-      0,
-    );
+    const totalViews = analyticsData.reduce((sum, d) => sum + d.totalViews, 0);
     const totalClicks = analyticsData.reduce(
       (sum, d) => sum + d.totalClicks,
-      0,
+      0
     );
     const avgCTR =
       analyticsData.length > 0
@@ -190,9 +176,7 @@ export default function Analytics({
         <div className="flex items-center gap-3">
           <h2 className="text-black">Analytics</h2>
           <div className="w-5 h-5 bg-[#e0e2d9] rounded-full flex items-center justify-center">
-            <span className="text-[#676b5f] text-[12px]">
-              ?
-            </span>
+            <span className="text-[#676b5f] text-[12px]">?</span>
           </div>
         </div>
         <Select value={dateRange} onValueChange={setDateRange}>
@@ -218,27 +202,21 @@ export default function Analytics({
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-[#8bc34a] rounded-full" />
-              <span className="text-[#676b5f]">
-                Views: {stats.views}
-              </span>
+              <span className="text-[#676b5f]">Views: {stats.views}</span>
             </div>
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-[#2196f3] rounded-full" />
-              <span className="text-[#676b5f]">
-                Clicks: {stats.clicks}
-              </span>
+              <span className="text-[#676b5f]">Clicks: {stats.clicks}</span>
             </div>
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-[#00bcd4] rounded-full" />
-              <span className="text-[#676b5f]">
-                CTR: {stats.ctr}%
-              </span>
+              <span className="text-[#676b5f]">CTR: {stats.ctr}%</span>
             </div>
           </div>
 
@@ -254,9 +232,7 @@ export default function Analytics({
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-[#9c27b0] rounded-full" />
-              <span className="text-[#676b5f]">
-                Revenue: --
-              </span>
+              <span className="text-[#676b5f]">Revenue: --</span>
             </div>
           </div>
         </div>
@@ -266,19 +242,13 @@ export default function Analytics({
       <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={analyticsData}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#e0e2d9"
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0e2d9" />
             <XAxis
               dataKey="date"
               stroke="#676b5f"
               tick={{ fill: "#676b5f", fontSize: 12 }}
             />
-            <YAxis
-              stroke="#676b5f"
-              tick={{ fill: "#676b5f", fontSize: 12 }}
-            />
+            <YAxis stroke="#676b5f" tick={{ fill: "#676b5f", fontSize: 12 }} />
             <Tooltip
               contentStyle={{
                 backgroundColor: "white",
@@ -343,8 +313,7 @@ export default function Analytics({
         {linkStats.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-[#676b5f]">
-              No click data yet. Share your links to start
-              tracking!
+              No click data yet. Share your links to start tracking!
             </p>
           </div>
         ) : (
@@ -356,14 +325,10 @@ export default function Analytics({
               >
                 <div className="flex items-center gap-3">
                   <MousePointer className="w-4 h-4 text-[#676b5f]" />
-                  <span className="text-black">
-                    {stat.title}
-                  </span>
+                  <span className="text-black">{stat.title}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#676b5f]">
-                    {stat.clicks} clicks
-                  </span>
+                  <span className="text-[#676b5f]">{stat.clicks} clicks</span>
                 </div>
               </div>
             ))}
@@ -381,8 +346,8 @@ export default function Analytics({
         {trafficSources.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-[#676b5f]">
-              Chưa có dữ liệu truy cập. Chia sẻ link của bạn để
-              bắt đầu theo dõi!
+              Chưa có dữ liệu truy cập. Chia sẻ link của bạn để bắt đầu theo
+              dõi!
             </p>
           </div>
         ) : (
@@ -402,10 +367,7 @@ export default function Analytics({
                     isAnimationActive={false}
                   >
                     {trafficSources.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                      />
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -414,10 +376,7 @@ export default function Analytics({
                       border: "1px solid #e0e2d9",
                       borderRadius: "8px",
                     }}
-                    formatter={(value: number) => [
-                      `${value} views`,
-                      "",
-                    ]}
+                    formatter={(value: number) => [`${value} views`, ""]}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -435,14 +394,10 @@ export default function Analytics({
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: source.color }}
                     />
-                    <span className="text-black">
-                      {source.name}
-                    </span>
+                    <span className="text-black">{source.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-[#676b5f]">
-                      {source.value} views
-                    </span>
+                    <span className="text-[#676b5f]">{source.value} views</span>
                     <span className="text-black font-medium">
                       {source.percentage}%
                     </span>
