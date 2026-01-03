@@ -299,10 +299,16 @@ export default function Dashboard({
                 }}
               />
             )}
-            {currentTab === "Analytics" && (
+            {currentTab === "Analytics" && bioPage && (
               <Analytics
+                pageId={bioPage.id}
                 username={currentBioPageUsername}
                 links={mappedLinks}
+                blocks={blocks.map((b) => ({
+                  id: b.id,
+                  title: b.title,
+                  type: b.type,
+                }))}
               />
             )}
             {currentTab === "Settings" && (

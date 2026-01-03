@@ -58,9 +58,12 @@ interface PhonePreviewProps {
   appearanceConfig?: AppearanceConfig | null;
   hideVielinkLogo?: boolean;
   blocks?: Block[];
+  onLinkClick?: (linkId: string) => void;
+  onBlockClick?: (blockId: string) => void;
 }
 
-const trackLinkClick = (
+// Legacy function for backward compatibility (localStorage)
+const trackLinkClickLegacy = (
   username: string,
   linkId: string,
   linkTitle: string
@@ -90,9 +93,22 @@ export default function PhonePreview({
   appearanceConfig,
   hideVielinkLogo,
   blocks = [],
+  onLinkClick,
+  onBlockClick,
 }: PhonePreviewProps) {
   const handleLinkClick = (link: Link) => {
-    trackLinkClick(username, link.id, link.title);
+    // Use new tracking if available, fallback to legacy
+    if (onLinkClick) {
+      onLinkClick(link.id);
+    } else {
+      trackLinkClickLegacy(username, link.id, link.title);
+    }
+  };
+
+  const handleBlockClick = (blockId: string) => {
+    if (onBlockClick) {
+      onBlockClick(blockId);
+    }
   };
 
   // Get background styles
@@ -215,6 +231,7 @@ export default function PhonePreview({
         block={block}
         buttonStyle={buttonStyle}
         fontFamily={fontFamily}
+        onBlockClick={handleBlockClick}
       />
     );
   };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -12,7 +12,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { MousePointer, Share2 } from "lucide-react";
+import { MousePointer, Share2, BarChart3 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,154 +20,97 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-
-interface AnalyticsData {
-  date: string;
-  totalViews: number;
-  uniqueViews: number;
-  totalClicks: number;
-  uniqueClicks: number;
-  ctr: number;
-}
-
-interface LinkClick {
-  linkId: string;
-  timestamp: number;
-  linkTitle: string;
-}
-
-// TrafficSource interface for future use
-// interface TrafficSource {
-//   name: string;
-//   value: number;
-//   percentage: number;
-//   color: string;
-// }
+import { usePageAnalytics } from "@/features/analytics";
 
 interface AnalyticsProps {
+  pageId: string;
   username: string;
-  links: Array<{ id: string; title: string }>;
+  links: Array<{ id: string; title: string }>; // Used for future features
+  blocks?: Array<{ id: string; title: string; type: string }>;
 }
 
-export default function Analytics({ username, links }: AnalyticsProps) {
+export default function Analytics({
+  pageId,
+  username,
+  links: _links,
+  blocks = [],
+}: AnalyticsProps) {
   const [dateRange, setDateRange] = useState("7");
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
-  const [linkClicks, setLinkClicks] = useState<LinkClick[]>([]);
 
-  useEffect(() => {
-    // Load click data from localStorage
-    const savedClicks = localStorage.getItem(`analytics_${username}`);
-    if (savedClicks) {
-      setLinkClicks(JSON.parse(savedClicks));
-    }
+  // Fetch real analytics data from database
+  const { analytics, loading, error } = usePageAnalytics({
+    pageId,
+    days: parseInt(dateRange),
+    enabled: !!pageId,
+  });
 
-    // Generate mock analytics data for demonstration
-    const data = generateMockData(parseInt(dateRange));
-    setAnalyticsData(data);
-  }, [username, dateRange]);
-
-  const generateMockData = (days: number): AnalyticsData[] => {
-    const data: AnalyticsData[] = [];
-    const today = new Date();
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-
-      const totalViews = Math.floor(Math.random() * 100) + 50;
-      const uniqueViews = Math.floor(totalViews * 0.7);
-      const totalClicks = Math.floor(Math.random() * 50) + 10;
-      const uniqueClicks = Math.floor(totalClicks * 0.8);
-      const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
-
-      data.push({
-        date: formatDate(date),
-        totalViews,
-        uniqueViews,
-        totalClicks,
-        uniqueClicks,
-        ctr: parseFloat(ctr.toFixed(2)),
-      });
-    }
-
-    return data;
-  };
-
-  const formatDate = (date: Date): string => {
-    const month = date.toLocaleString("en", { month: "short" });
-    const day = date.getDate();
-    return `${month} ${day}`;
-  };
-
+  // Stats from real data
   const stats = useMemo(() => {
-    const totalViews = analyticsData.reduce((sum, d) => sum + d.totalViews, 0);
-    const totalClicks = analyticsData.reduce(
-      (sum, d) => sum + d.totalClicks,
-      0
-    );
-    const avgCTR =
-      analyticsData.length > 0
-        ? analyticsData.reduce((sum, d) => sum + d.ctr, 0) /
-          analyticsData.length
-        : 0;
+    if (!analytics) {
+      return {
+        views: 0,
+        clicks: 0,
+        ctr: "0.00",
+        subscribers: 0,
+        revenue: 0,
+      };
+    }
 
     return {
-      views: totalViews,
-      clicks: totalClicks,
-      ctr: avgCTR.toFixed(2),
-      subscribers: 0,
-      revenue: 0,
+      views: analytics.totalViews,
+      clicks: analytics.totalClicks,
+      ctr: analytics.averageCTR.toFixed(2),
+      subscribers: 0, // Not implemented yet
+      revenue: 0, // Not implemented yet
     };
-  }, [analyticsData]);
+  }, [analytics]);
 
-  const linkStats = useMemo(() => {
-    const stats = new Map<string, number>();
-    linkClicks.forEach((click) => {
-      const count = stats.get(click.linkId) || 0;
-      stats.set(click.linkId, count + 1);
-    });
+  // Check if we have any data
+  const hasData =
+    analytics && (analytics.totalViews > 0 || analytics.totalClicks > 0);
 
-    return Array.from(stats.entries())
-      .map(([linkId, clicks]) => {
-        const link = links.find((l) => l.id === linkId);
-        return {
-          linkId,
-          title: link?.title || "Unknown",
-          clicks,
-        };
-      })
-      .sort((a, b) => b.clicks - a.clicks);
-  }, [linkClicks, links]);
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-black">Analytics</h2>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-12">
+          <div className="flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-[#8129d9] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-[#676b5f]">Đang tải dữ liệu analytics...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Generate traffic sources based on total views
-  const trafficSources = useMemo(() => {
-    const totalViews = stats.views;
-
-    if (totalViews === 0) {
-      return [];
-    }
-
-    // Define traffic source distribution percentages
-    const sources = [
-      { name: "Facebook", percentage: 35, color: "#1877f2" },
-      { name: "TikTok", percentage: 25, color: "#000000" },
-      { name: "Instagram", percentage: 15, color: "#e4405f" },
-      { name: "Zalo", percentage: 10, color: "#0068ff" },
-      {
-        name: "Truy cập trực tiếp",
-        percentage: 10,
-        color: "#8bc34a",
-      },
-      { name: "Khác", percentage: 5, color: "#9e9e9e" },
-    ];
-
-    return sources.map((source) => ({
-      name: source.name,
-      value: Math.round((totalViews * source.percentage) / 100),
-      percentage: source.percentage,
-      color: source.color,
-    }));
-  }, [stats.views]);
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-black">Analytics</h2>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-red-200 p-12">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <BarChart3 className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-medium text-red-600 mb-2">
+              Lỗi tải dữ liệu
+            </h3>
+            <p className="text-[#676b5f]">{error.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -238,87 +181,155 @@ export default function Analytics({ username, links }: AnalyticsProps) {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={analyticsData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e0e2d9" />
-            <XAxis
-              dataKey="date"
-              stroke="#676b5f"
-              tick={{ fill: "#676b5f", fontSize: 12 }}
-            />
-            <YAxis stroke="#676b5f" tick={{ fill: "#676b5f", fontSize: 12 }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e0e2d9",
-                borderRadius: "8px",
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: "12px" }} />
-            <Line
-              type="monotone"
-              dataKey="totalViews"
-              stroke="#8bc34a"
-              name="Total Views"
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="uniqueViews"
-              stroke="#4caf50"
-              name="Unique Views"
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="totalClicks"
-              stroke="#2196f3"
-              name="Total Clicks"
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="uniqueClicks"
-              stroke="#03a9f4"
-              name="Unique Clicks"
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="ctr"
-              stroke="#00bcd4"
-              name="Click Through Rate"
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Charts - Views & Clicks + CTR */}
+      {!hasData ? (
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 bg-[#f6f7f5] rounded-full flex items-center justify-center mb-4">
+              <BarChart3 className="w-8 h-8 text-[#676b5f]" />
+            </div>
+            <h3 className="text-lg font-medium text-black mb-2">
+              Chưa có dữ liệu
+            </h3>
+            <p className="text-[#676b5f] text-center max-w-md">
+              Chia sẻ link trang của bạn để bắt đầu theo dõi lượt xem và click.
+              <br />
+              <span className="text-sm">vielink.vn/{username}</span>
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Chart 1: Views & Clicks (Counts) */}
+          <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+            <h3 className="text-black mb-4">Views & Clicks Over Time</h3>
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={analytics?.dailyData || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e2d9" />
+                <XAxis
+                  dataKey="date"
+                  stroke="#676b5f"
+                  tick={{ fill: "#676b5f", fontSize: 12 }}
+                />
+                <YAxis
+                  stroke="#676b5f"
+                  tick={{ fill: "#676b5f", fontSize: 12 }}
+                  label={{
+                    value: "Count",
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fill: "#676b5f", fontSize: 12 },
+                  }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "white",
+                    border: "1px solid #e0e2d9",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: "12px" }} />
+                <Line
+                  type="monotone"
+                  dataKey="totalViews"
+                  stroke="#8bc34a"
+                  name="Total Views"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="uniqueViews"
+                  stroke="#4caf50"
+                  name="Unique Views"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="totalClicks"
+                  stroke="#2196f3"
+                  name="Total Clicks"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="uniqueClicks"
+                  stroke="#03a9f4"
+                  name="Unique Clicks"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Chart 2: Click Through Rate (%) */}
+          <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+            <h3 className="text-black mb-4">
+              Click Through Rate (CTR) Over Time
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={analytics?.dailyData || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e2d9" />
+                <XAxis
+                  dataKey="date"
+                  stroke="#676b5f"
+                  tick={{ fill: "#676b5f", fontSize: 12 }}
+                />
+                <YAxis
+                  stroke="#676b5f"
+                  tick={{ fill: "#676b5f", fontSize: 12 }}
+                  label={{
+                    value: "CTR (%)",
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fill: "#676b5f", fontSize: 12 },
+                  }}
+                  domain={[0, "auto"]}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "white",
+                    border: "1px solid #e0e2d9",
+                    borderRadius: "8px",
+                  }}
+                  formatter={(value: number) => [`${value.toFixed(2)}%`, "CTR"]}
+                />
+                <Legend wrapperStyle={{ fontSize: "12px" }} />
+                <Line
+                  type="monotone"
+                  dataKey="ctr"
+                  stroke="#00bcd4"
+                  name="Click Through Rate"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "#00bcd4" }}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
 
       {/* Link Performance */}
       <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
         <h3 className="text-black mb-4">Link Performance</h3>
 
-        {linkStats.length === 0 ? (
+        {!analytics?.linkStats || analytics.linkStats.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-[#676b5f]">
-              No click data yet. Share your links to start tracking!
+              Chưa có dữ liệu click. Chia sẻ link của bạn để bắt đầu theo dõi!
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {linkStats.map((stat) => (
+            {analytics.linkStats.map((stat) => (
               <div
                 key={stat.linkId}
                 className="flex items-center justify-between p-4 bg-[#f6f7f5] rounded-lg"
@@ -336,6 +347,43 @@ export default function Analytics({ username, links }: AnalyticsProps) {
         )}
       </div>
 
+      {/* Block Performance */}
+      {blocks.length > 0 && (
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <h3 className="text-black mb-4">Block Performance</h3>
+
+          {!analytics?.blockStats || analytics.blockStats.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-[#676b5f]">
+                Chưa có dữ liệu click trên blocks.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {analytics.blockStats.map((stat) => (
+                <div
+                  key={stat.blockId}
+                  className="flex items-center justify-between p-4 bg-[#f6f7f5] rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <MousePointer className="w-4 h-4 text-[#676b5f]" />
+                    <div>
+                      <span className="text-black">{stat.title}</span>
+                      <span className="text-xs text-[#676b5f] ml-2">
+                        ({stat.type})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#676b5f]">{stat.clicks} clicks</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Traffic Sources */}
       <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
         <div className="flex items-center gap-3 mb-6">
@@ -343,7 +391,7 @@ export default function Analytics({ username, links }: AnalyticsProps) {
           <h3 className="text-black">Traffic sources</h3>
         </div>
 
-        {trafficSources.length === 0 ? (
+        {!analytics?.trafficSources || analytics.trafficSources.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-[#676b5f]">
               Chưa có dữ liệu truy cập. Chia sẻ link của bạn để bắt đầu theo
@@ -357,7 +405,7 @@ export default function Analytics({ username, links }: AnalyticsProps) {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={trafficSources}
+                    data={analytics.trafficSources}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -366,7 +414,7 @@ export default function Analytics({ username, links }: AnalyticsProps) {
                     dataKey="value"
                     isAnimationActive={false}
                   >
-                    {trafficSources.map((entry, index) => (
+                    {analytics.trafficSources.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -384,7 +432,7 @@ export default function Analytics({ username, links }: AnalyticsProps) {
 
             {/* Legend with Stats */}
             <div className="flex flex-col justify-center space-y-4">
-              {trafficSources.map((source) => (
+              {analytics.trafficSources.map((source) => (
                 <div
                   key={source.name}
                   className="flex items-center justify-between p-3 bg-[#f6f7f5] rounded-lg"

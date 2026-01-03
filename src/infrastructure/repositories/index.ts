@@ -12,3 +12,6 @@ export type { CreateLinkDTO, UpdateLinkDTO } from "./linkRepository";
 
 export { blockRepository } from "./blockRepository";
 export type { CreateBlockDTO, UpdateBlockDTO } from "./blockRepository";
+
+export { analyticsRepository } from "./analyticsRepository";
+export type { CreateAnalyticsEventDTO } from "./analyticsRepository";

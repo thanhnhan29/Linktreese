@@ -113,3 +113,6 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
 
 // Re-export theme types
 export * from "./theme";
+
+// Re-export analytics types
+export * from "./analytics";
