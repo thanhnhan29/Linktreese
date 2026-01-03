@@ -5,11 +5,11 @@ import { useEffect, useCallback } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth, LoginForm, SignupForm } from "@/features/auth";
 import {
-  CreateUsernameForm,
-  Dashboard,
-  PublicBioPage,
-  bioPageService,
-} from "@/features/bio-page";
+    CreateUsernameForm,
+    Dashboard,
+    PublicBioPage,
+    bioPageService,
+  } from "@/features/bio-page";
 import { LoadingScreen, ProtectedRoute } from "@/shared/components";
 import { isFirebaseConfigured } from "@/infrastructure/firebase";
 import { toast } from "sonner";
@@ -31,11 +31,8 @@ export function App() {
     async (email: string, password: string) => {
       const result = await login(email, password);
 
-      if (result.hasExistingPage && result.firstPageUsername) {
-        navigate(`/dashboard/${result.firstPageUsername}`);
-      } else {
-        navigate("/create-username");
-      }
+      // After login show dashboard selector — user picks page or creates new
+      navigate("/dashboard");
     },
     [login, navigate]
   );
@@ -249,7 +246,6 @@ function DashboardWrapper({
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const urlParams = new URLSearchParams(window.location.search);
   const usernameFromUrl = window.location.pathname.split("/dashboard/")[1];
 
   if (!user || !usernameFromUrl) {

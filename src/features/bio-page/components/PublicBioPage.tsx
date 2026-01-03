@@ -8,6 +8,11 @@ import { bioPageService } from "../services/bioPageService";
 import { linkService } from "../services/linkService";
 import { blockService } from "../services/blockService";
 import { themeConfigToAppearance } from "../../../shared/types/theme";
+import {
+  useTrackPageView,
+  useTrackLinkClick,
+  useTrackBlockClick,
+} from "../../analytics";
 import type { BioPage, Link, Block } from "../../../shared/types";
 
 export default function PublicBioPage() {
@@ -19,6 +24,13 @@ export default function PublicBioPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Track page view
+  useTrackPageView(bioPage?.id);
+
+  // Get click tracking functions
+  const trackLinkClick = useTrackLinkClick(bioPage?.id);
+  const trackBlockClick = useTrackBlockClick(bioPage?.id);
 
   useEffect(() => {
     if (!username) {
@@ -148,6 +160,8 @@ export default function PublicBioPage() {
           appearanceConfig={appearanceConfig}
           hideVielinkLogo={bioPage.isLogoHidden}
           blocks={mappedBlocks}
+          onLinkClick={trackLinkClick}
+          onBlockClick={trackBlockClick}
         />
 
         {/* Optional: Add Vielink branding at bottom */}

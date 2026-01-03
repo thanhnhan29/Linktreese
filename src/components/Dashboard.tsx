@@ -632,8 +632,17 @@ export default function Dashboard({
                 onConfigChange={handleAppearanceChange} // Dùng hàm mới lưu Firestore
               />
             )}
-            {currentTab === "analytics" && (
-              <Analytics username={currentBioPageUsername} links={links} />
+            {currentTab === "analytics" && bioPageId && (
+              <Analytics
+                pageId={bioPageId}
+                username={currentBioPageUsername}
+                links={links}
+                blocks={blocks.map((b) => ({
+                  id: b.id,
+                  title: b.data?.title || "Block",
+                  type: b.type,
+                }))}
+              />
             )}
             {currentTab === "settings" && (
               <Settings
