@@ -28,6 +28,7 @@ export interface CreateUserDTO {
 export interface UpdateUserDTO {
   fullName?: string;
   avatarUrl?: string;
+  authProvider?: 'email' | 'google';
   proPurchase?: boolean;
   proExpiresAt?: Date;
   emailVerified?: boolean;

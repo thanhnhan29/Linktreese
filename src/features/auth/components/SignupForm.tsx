@@ -1,10 +1,12 @@
 // src/features/auth/components/SignupForm.tsx
 // Signup form component (preserves original UI)
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { validateEmail, validatePassword } from '@/shared/lib/validation';
 import { getErrorMessage } from '@/shared/lib/errors';
 import svgPaths from '@/imports/svg-du8004kdwc';
+import { authService } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface SignupFormProps {
   onSignup: (email: string, password: string) => Promise<{ emailSent?: boolean } | void>;
@@ -12,16 +14,10 @@ interface SignupFormProps {
 }
 
 export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
+  const navigate = useNavigate();
   // visible debug line to confirm this component is the one rendering for /register
-  const [debugLine, setDebugLine] = useState('');
   const [emailSent, setEmailSent] = useState(false);
-  useEffect(() => {
-    const token = Math.random().toString(36).slice(2, 9);
-    const ts = Date.now().toString(36).slice(-6);
-    const line = `signupform-debug-${ts}-${token}`;
-    setDebugLine(line);
-    console.log('SignupForm debugLine:', line);
-  }, []);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -129,9 +125,22 @@ export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
   };
 
   const handleGoogleSignup = async () => {
-    console.log('Google signup clicked');
-    // TODO: implement Google sign-up
-    alert('Google signup would happen here. This is a demo.');
+    setIsSubmitting(true);
+    try {
+      const result = await authService.signInWithGoogle();
+      
+      // Navigate based on whether user has pages
+      if (result.hasExistingPage && result.firstPageUsername) {
+        navigate(`/dashboard/${result.firstPageUsername}`);
+      } else {
+        navigate('/create-username');
+      }
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setEmailError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -148,8 +157,6 @@ export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
 
       {/* Signup Form or Email Sent Message */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[592px]">
-        {/* Debug line to identify this signup UI */}
-        <div className="text-sm text-gray-500 mb-2">{debugLine}</div>
         
         {emailSent ? (
           // Email sent confirmation
@@ -172,7 +179,7 @@ export function SignupForm({ onSignup, onSwitchToLogin }: SignupFormProps) {
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="bg-[#8129d9] text-white rounded-[64px] px-8 py-3 tracking-[-0.32px] hover:bg-[#7020c0] transition-colors text-center"
+              className="bg-[#8129d9] text-white rounded-[64px] w-[200px] mx-auto block py-3 text-[16px] tracking-[-0.32px] hover:bg-[#7020c0] transition-colors text-center mt-16"            
             >
               Go to Sign In
             </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import svgPaths from "../imports/svg-du8004kdwc";
 
 // interface SignupPageProps {
@@ -13,7 +13,6 @@ interface SignupPageProps {
 }
 
 export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProps) {
-  console.log('=== SignupPage RENDER ===');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,15 +21,6 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [emailSent, setEmailSent] = useState(false);
-  // random debug line to ensure correct signup screen loaded
-  const [debugLine, setDebugLine] = useState('');
-
-  useEffect(() => {
-    const token = Math.random().toString(36).slice(2, 9);
-    const ts = Date.now().toString(36).slice(-6);
-    setDebugLine(`signup-debug-${ts}-${token}`);
-    console.log('SignupPage debugLine:', `signup-debug-${ts}-${token}`);
-  }, []);
 
   const EXISTING_EMAILS = ['abc@gmail.com'];
 
@@ -97,7 +87,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('=== SignupPage handleSubmit called ===');
+    
     
     let hasError = false;
 
@@ -143,13 +133,11 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
     console.log('No validation errors, calling onSignup...');
     try {
       const result = await onSignup(email, password);
-      console.log('onSignup returned:', result);
       if (result?.emailSent) {
-        console.log('Setting emailSent to true');
         setEmailSent(true);
       }
     } catch (error: any) {
-      console.log('Signup error:', error);
+      
       if (error.code === 'auth/email-already-in-use') {
         setEmailError('This email is already registered');
       } else {
@@ -162,11 +150,10 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
   // Implement real Google signup flow (signInWithPopup + GoogleAuthProvider)
   // later when Firebase auth UI is wired up.
   const handleGoogleSignup = async () => {
-    try {
-      console.log('Google signup clicked');
+      try {
       // TODO: implement Google sign-up
     } catch (err) {
-      console.error('Google signup failed', err);
+      // noop
     }
   };
 
@@ -212,8 +199,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
         ) : (
           // Signup form
           <>
-            {/* visible debug line to confirm this screen is active */}
-            <div className="text-sm text-gray-500 mb-4">{debugLine}</div>
+            
             <h1 className="font-['Inter'] tracking-[-2px] text-black mb-6 text-[24px]">Tell us about yourself</h1>
             <p className="tracking-[-0.32px] text-[#676b5f] mb-12">
               For a personalized Linktree experience

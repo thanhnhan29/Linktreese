@@ -7,6 +7,8 @@ import {
   signOut,
   onAuthStateChanged,
   sendEmailVerification,
+  signInWithPopup,
+  GoogleAuthProvider,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '@/infrastructure/firebase';
@@ -137,6 +139,68 @@ class AuthService {
    */
   async logout(): Promise<void> {
     await signOut(auth);
+  }
+
+  /**
+   * Sign in with Google OAuth
+   */
+  async signInWithGoogle(): Promise<LoginResult> {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+
+      if (!firebaseUser.email) {
+        throw new AuthenticationError('No email associated with this Google account');
+      }
+
+      const authUser: AuthUser = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+      };
+
+      // Check if user document exists in Firestore
+      let firestoreUser = await userRepository.findById(firebaseUser.uid);
+      
+      if (!firestoreUser) {
+        // Create user document for first-time Google sign-in
+        await userRepository.create(firebaseUser.uid, {
+          email: firebaseUser.email,
+          fullName: firebaseUser.displayName || undefined,
+          avatarUrl: firebaseUser.photoURL || undefined,
+          authProvider: 'google',
+          emailVerified: true, // Google accounts are pre-verified
+        });
+      } else {
+        // Update existing user to mark as verified (Google accounts are always verified)
+        await userRepository.update(firebaseUser.uid, { 
+          emailVerified: true,
+          authProvider: 'google',
+        });
+      }
+
+      // Check if user has existing bio pages
+      const bioPages = await bioPageRepository.findByUserId(firebaseUser.uid);
+      
+      return {
+        user: authUser,
+        hasExistingPage: bioPages.length > 0,
+        firstPageUsername: bioPages[0]?.username,
+        isEmailVerified: true, // Google accounts are always verified
+      };
+    } catch (error: unknown) {
+      const firebaseError = error as { code?: string; message?: string };
+      
+      if (firebaseError.code === 'auth/popup-closed-by-user') {
+        throw new ValidationError('Sign-in cancelled');
+      }
+      
+      if (firebaseError.code === 'auth/popup-blocked') {
+        throw new ValidationError('Pop-up blocked by browser. Please allow pop-ups and try again.');
+      }
+      
+      throw new AuthenticationError('Failed to sign in with Google');
+    }
   }
 
   /**

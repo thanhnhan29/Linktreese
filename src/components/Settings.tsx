@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { deleteUser } from 'firebase/auth';
+import { auth } from '@/infrastructure/firebase';
 import { Globe, Lock, Bell, Trash2, CheckCircle, AlertCircle, Copy, Crown, Check, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
@@ -229,18 +231,43 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
   };
 
   const handleDeleteAccount = () => {
-    // In production, this would delete the account from database
-    localStorage.removeItem('user');
-    localStorage.removeItem(`user_${user.username}`);
-    localStorage.removeItem(`links_${user.username}`);
-    localStorage.removeItem(`profile_${user.username}`);
-    localStorage.removeItem(`analytics_${user.username}`);
-    localStorage.removeItem(`domain_${user.username}`);
-    localStorage.removeItem(`settings_${user.username}`);
-    
-    toast.success('Account deleted successfully');
-    setShowDeleteDialog(false);
-    onLogout();
+    // Attempt to delete the Firebase Auth account (best-effort).
+    // We intentionally do NOT delete any Firestore data here per request.
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      toast.error('No authenticated user found. Please sign in and try again.');
+      setShowDeleteDialog(false);
+      return;
+    }
+
+    deleteUser(firebaseUser)
+      .then(() => {
+        // Clear local app data (but not touching Firestore)
+        localStorage.removeItem('user');
+        localStorage.removeItem(`user_${user.username}`);
+        localStorage.removeItem(`links_${user.username}`);
+        localStorage.removeItem(`profile_${user.username}`);
+        localStorage.removeItem(`analytics_${user.username}`);
+        localStorage.removeItem(`domain_${user.username}`);
+        localStorage.removeItem(`settings_${user.username}`);
+
+        toast.success('Account deleted from authentication provider');
+        setShowDeleteDialog(false);
+        // Call onLogout to update app state
+        onLogout();
+      })
+      .catch((err: any) => {
+        console.error('Failed to delete Firebase Auth user:', err);
+        // Common error: requires recent login
+        if (err?.code === 'auth/requires-recent-login') {
+          toast.error('Please sign in again to confirm account deletion.');
+          // Force logout so user can re-authenticate
+          onLogout();
+        } else {
+          toast.error('Failed to delete account. Please try again later.');
+        }
+        setShowDeleteDialog(false);
+      });
   };
 
   const copyToClipboard = (text: string) => {
