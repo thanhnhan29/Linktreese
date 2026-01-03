@@ -84,6 +84,12 @@ export default function Dashboard({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Get current URL base (localhost or production)
+  const getShareUrl = () => {
+    const baseUrl = window.location.origin; // Gets http://localhost:3000 or https://vielink.vn
+    return `${baseUrl}/${currentBioPageUsername}`;
+  };
+
   const menuRef = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
 
@@ -705,7 +711,7 @@ export default function Dashboard({
               ref={qrCodeRef}
             >
               <QRCodeSVG
-                value={`https://vielink.vn/${currentBioPageUsername}`}
+                value={getShareUrl()}
                 size={200}
                 level="H"
                 includeMargin={true}
@@ -715,15 +721,11 @@ export default function Dashboard({
               <input
                 type="text"
                 readOnly
-                value={`https://vielink.vn/${currentBioPageUsername}`}
+                value={getShareUrl()}
                 className="flex-1 bg-transparent text-black text-sm outline-none"
               />
               <button
-                onClick={() =>
-                  copyToClipboard(
-                    `https://vielink.vn/${currentBioPageUsername}`
-                  )
-                }
+                onClick={() => copyToClipboard(getShareUrl())}
                 className="flex items-center gap-2 bg-[#8129d9] text-white px-4 py-2 rounded-full"
               >
                 {copiedLink ? <CheckCheck size={16} /> : <Copy size={16} />}

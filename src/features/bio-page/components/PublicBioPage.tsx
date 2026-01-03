@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import PhonePreview from "../../../components/PhonePreview";
+import PublicBioView from "../../../components/PublicBioView";
 import { bioPageService } from "../services/bioPageService";
 import { linkService } from "../services/linkService";
 import { blockService } from "../services/blockService";
@@ -139,7 +139,7 @@ export default function PublicBioPage() {
     data: link.data,
   }));
 
-  // Map blocks to format expected by PhonePreview
+  // Map blocks to format expected by PublicBioView
   const mappedBlocks = blocks.map((block) => ({
     id: block.id,
     type: block.type,
@@ -149,33 +149,17 @@ export default function PublicBioPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#f6f7f5] flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <PhonePreview
-          username={bioPage.username}
-          name={bioPage.displayName || bioPage.username}
-          bio={bioPage.bioDescription || ""}
-          profileImage={bioPage.avatarUrl || ""}
-          links={mappedLinks}
-          appearanceConfig={appearanceConfig}
-          hideVielinkLogo={bioPage.isLogoHidden}
-          blocks={mappedBlocks}
-          onLinkClick={trackLinkClick}
-          onBlockClick={trackBlockClick}
-        />
-
-        {/* Optional: Add Vielink branding at bottom */}
-        {!bioPage.isLogoHidden && (
-          <div className="mt-6 text-center">
-            <a
-              href="/login"
-              className="text-sm text-[#676b5f] hover:text-[#8129d9] transition-colors"
-            >
-              Create your own link-in-bio • Vielink
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
+    <PublicBioView
+      username={bioPage.username}
+      name={bioPage.displayName || bioPage.username}
+      bio={bioPage.bioDescription || ""}
+      profileImage={bioPage.avatarUrl || ""}
+      links={mappedLinks}
+      appearanceConfig={appearanceConfig}
+      hideVielinkLogo={bioPage.isLogoHidden}
+      blocks={mappedBlocks}
+      onLinkClick={trackLinkClick}
+      onBlockClick={trackBlockClick}
+    />
   );
 }
