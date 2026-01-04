@@ -1,11 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Globe, Lock, Bell, Trash2, CheckCircle, AlertCircle, Copy, Crown, Check, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
-import { Badge } from './ui/badge';
-import { Switch } from './ui/switch';
-import { toast } from 'sonner';
-import Pricing from './Pricing';
+import { useState, useEffect } from "react";
+import { deleteUser } from "firebase/auth";
+import { auth } from "@/infrastructure/firebase";
+import { authService } from "@/features/auth/services/authService";
+import {
+  Globe,
+  Lock,
+  Bell,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Copy,
+  Crown,
+  Check,
+  X,
+  Mail,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "./ui/dialog";
+import { Badge } from "./ui/badge";
+import { Switch } from "./ui/switch";
+import { toast } from "sonner";
+import Pricing from "./Pricing";
 
 interface User {
   username: string;
@@ -25,40 +47,38 @@ interface DomainStatus {
   isPro: boolean;
 }
 
-export default function Settings({ user, onLogout, onUpdateDisplayName, onSettingsChange }: SettingsProps) {
-  const [customDomain, setCustomDomain] = useState('');
+export default function Settings({
+  user,
+  onLogout,
+  onUpdateDisplayName,
+  onSettingsChange,
+}: SettingsProps) {
+  const [customDomain, setCustomDomain] = useState("");
   const [domainStatus, setDomainStatus] = useState<DomainStatus | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showDomainDialog, setShowDomainDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
+
   // Account settings
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  
-  // Validation errors
-  const [_emailError, _setEmailError] = useState('');
-  const [currentPasswordError, setCurrentPasswordError] = useState('');
-  const [_newPasswordError, setNewPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
-  
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
+
   // Dialogs
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showPricingDialog, setShowPricingDialog] = useState(false);
-  
+
   // Debounce timer for display name
-  const [displayNameTimer, setDisplayNameTimer] = useState<NodeJS.Timeout | null>(null);
-  
+  const [displayNameTimer, setDisplayNameTimer] =
+    useState<NodeJS.Timeout | null>(null);
+
   // Privacy settings
   const [isProfilePublic, setIsProfilePublic] = useState(true);
   const [showAnalytics, setShowAnalytics] = useState(true);
-  
+
   // PRO settings
   const [hideVielinkLogo, setHideVielinkLogo] = useState(false);
-  
+
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyReports, setWeeklyReports] = useState(false);
@@ -75,29 +95,30 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
     const savedSettings = localStorage.getItem(`settings_${user.username}`);
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
-      setEmail(settings.email || user.email || '');
-      setDisplayName(settings.displayName || user.username || '');
+      setEmail(settings.email || user.email || "");
+      setDisplayName(settings.displayName || user.username || "");
       setIsProfilePublic(settings.isProfilePublic ?? true);
       setShowAnalytics(settings.showAnalytics ?? true);
       setHideVielinkLogo(settings.hideVielinkLogo ?? false);
       setEmailNotifications(settings.emailNotifications ?? true);
       setWeeklyReports(settings.weeklyReports ?? false);
     } else {
-      setEmail(user.email || '');
-      setDisplayName(user.username || '');
+      setEmail(user.email || "");
+      setDisplayName(user.username || "");
     }
   }, [user.username]);
 
   const handleVerifyDomain = async () => {
     if (!customDomain) {
-      toast.error('Please enter a domain name');
+      toast.error("Please enter a domain name");
       return;
     }
 
     // Basic domain validation
-    const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
+    const domainRegex =
+      /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
     if (!domainRegex.test(customDomain)) {
-      toast.error('Please enter a valid domain name');
+      toast.error("Please enter a valid domain name");
       return;
     }
 
@@ -107,30 +128,35 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
     setTimeout(() => {
       // Simulate 70% success rate for demo
       const isSuccess = Math.random() > 0.3;
-      
+
       if (isSuccess) {
         const newStatus: DomainStatus = {
           domain: customDomain,
           isVerified: true,
-          isPro: true // In production, check if user has Pro subscription
+          isPro: true, // In production, check if user has Pro subscription
         };
         setDomainStatus(newStatus);
-        localStorage.setItem(`domain_${user.username}`, JSON.stringify(newStatus));
-        toast.success('Domain verified successfully!');
+        localStorage.setItem(
+          `domain_${user.username}`,
+          JSON.stringify(newStatus)
+        );
+        toast.success("Domain verified successfully!");
         setShowDomainDialog(false);
       } else {
-        toast.error('Unable to verify domain. Please check your DNS settings and try again.');
+        toast.error(
+          "Unable to verify domain. Please check your DNS settings and try again."
+        );
       }
-      
+
       setIsVerifying(false);
     }, 2000);
   };
 
   const handleRemoveDomain = () => {
     setDomainStatus(null);
-    setCustomDomain('');
+    setCustomDomain("");
     localStorage.removeItem(`domain_${user.username}`);
-    toast.success('Custom domain removed');
+    toast.success("Custom domain removed");
   };
 
   const handleSaveSettings = () => {
@@ -141,143 +167,73 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
       showAnalytics,
       hideVielinkLogo,
       emailNotifications,
-      weeklyReports
+      weeklyReports,
     };
     localStorage.setItem(`settings_${user.username}`, JSON.stringify(settings));
-    toast.success('Settings saved successfully');
+    toast.success("Settings saved successfully");
     if (onSettingsChange) {
       onSettingsChange(settings);
     }
   };
 
-  const handleChangePassword = () => {
-    // Clear previous errors
-    setCurrentPasswordError('');
-    setNewPasswordError('');
-    setConfirmPasswordError('');
-    
-    // Validate fields are filled
-    if (!currentPassword) {
-      setCurrentPasswordError('Current password is required');
-      return;
+  const handleChangePassword = async () => {
+    setIsSendingEmail(true);
+
+    try {
+      await authService.sendPasswordResetEmail(user.email);
+
+      toast.success("Password reset email sent! Check your inbox.");
+      setShowPasswordDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setIsSendingEmail(false);
     }
-    
-    if (!newPassword) {
-      setNewPasswordError('New password is required');
-      return;
-    }
-    
-    if (!confirmPassword) {
-      setConfirmPasswordError('Confirm password is required');
-      return;
-    }
-    
-    // Get stored user data to verify current password
-    const storedUser = localStorage.getItem(`user_${user.username}`);
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      if (userData.password !== currentPassword) {
-        setCurrentPasswordError('Current password is incorrect');
-        return;
-      }
-    }
-    
-    // Validate password strength
-    // At least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    
-    if (!passwordRegex.test(newPassword)) {
-      const errors = [];
-      if (newPassword.length < 8) {
-        errors.push('at least 8 characters');
-      }
-      if (!/(?=.*[a-z])/.test(newPassword)) {
-        errors.push('one lowercase letter');
-      }
-      if (!/(?=.*[A-Z])/.test(newPassword)) {
-        errors.push('one uppercase letter');
-      }
-      if (!/(?=.*\d)/.test(newPassword)) {
-        errors.push('one number');
-      }
-      if (!/(?=.*[@$!%*?&])/.test(newPassword)) {
-        errors.push('one special character (@$!%*?&)');
-      }
-      
-      setNewPasswordError(`Password must contain ${errors.join(', ')}`);
-      return;
-    }
-    
-    // Validate confirm password
-    if (newPassword !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match');
-      return;
-    }
-    
-    // Update password in localStorage
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      userData.password = newPassword;
-      localStorage.setItem(`user_${user.username}`, JSON.stringify(userData));
-    }
-    
-    toast.success('Password changed successfully');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowPasswordDialog(false);
   };
 
   const handleDeleteAccount = () => {
-    // In production, this would delete the account from database
-    localStorage.removeItem('user');
-    localStorage.removeItem(`user_${user.username}`);
-    localStorage.removeItem(`links_${user.username}`);
-    localStorage.removeItem(`profile_${user.username}`);
-    localStorage.removeItem(`analytics_${user.username}`);
-    localStorage.removeItem(`domain_${user.username}`);
-    localStorage.removeItem(`settings_${user.username}`);
-    
-    toast.success('Account deleted successfully');
-    setShowDeleteDialog(false);
-    onLogout();
+    // Attempt to delete the Firebase Auth account (best-effort).
+    // We intentionally do NOT delete any Firestore data here per request.
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      toast.error("No authenticated user found. Please sign in and try again.");
+      setShowDeleteDialog(false);
+      return;
+    }
+
+    deleteUser(firebaseUser)
+      .then(() => {
+        // Clear local app data (but not touching Firestore)
+        localStorage.removeItem("user");
+        localStorage.removeItem(`user_${user.username}`);
+        localStorage.removeItem(`links_${user.username}`);
+        localStorage.removeItem(`profile_${user.username}`);
+        localStorage.removeItem(`analytics_${user.username}`);
+        localStorage.removeItem(`domain_${user.username}`);
+        localStorage.removeItem(`settings_${user.username}`);
+
+        toast.success("Account deleted from authentication provider");
+        setShowDeleteDialog(false);
+        // Call onLogout to update app state
+        onLogout();
+      })
+      .catch((err: any) => {
+        console.error("Failed to delete Firebase Auth user:", err);
+        // Common error: requires recent login
+        if (err?.code === "auth/requires-recent-login") {
+          toast.error("Please sign in again to confirm account deletion.");
+          // Force logout so user can re-authenticate
+          onLogout();
+        } else {
+          toast.error("Failed to delete account. Please try again later.");
+        }
+        setShowDeleteDialog(false);
+      });
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
-  };
-
-  // Password validation helpers
-  const validateCurrentPassword = (password: string) => {
-    return password === 'Hihi34@';
-  };
-
-  const validatePasswordStrength = (password: string) => {
-    return {
-      minLength: password.length >= 8,
-      hasLowercase: /[a-z]/.test(password),
-      hasUppercase: /[A-Z]/.test(password),
-      hasNumber: /\d/.test(password),
-      hasSpecial: /[@$!%*?&]/.test(password)
-    };
-  };
-
-  const isPasswordValid = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) return false;
-    
-    // Check current password
-    if (!validateCurrentPassword(currentPassword)) return false;
-    
-    // Check new password strength
-    const strength = validatePasswordStrength(newPassword);
-    const isStrong = Object.values(strength).every(v => v);
-    if (!isStrong) return false;
-    
-    // Check confirm password matches
-    if (newPassword !== confirmPassword) return false;
-    
-    return true;
+    toast.success("Copied to clipboard");
   };
 
   return (
@@ -285,7 +241,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
       {/* Header */}
       <div>
         <h2 className="text-black mb-2">Settings</h2>
-        <p className="text-[#676b5f]">Manage your account settings and preferences</p>
+        <p className="text-[#676b5f]">
+          Manage your account settings and preferences
+        </p>
       </div>
 
       {/* Custom Domain Section */}
@@ -296,7 +254,7 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-black">Custom Domain</h3>
-                <Badge 
+                <Badge
                   className="bg-gradient-to-r from-[#8129d9] to-[#d946ef] text-white border-0 cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setShowPricingDialog(true)}
                 >
@@ -304,7 +262,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                   PRO
                 </Badge>
               </div>
-              <p className="text-[#676b5f] mt-1">Use your own domain for your Linktree page</p>
+              <p className="text-[#676b5f] mt-1">
+                Use your own domain for your Linktree page
+              </p>
             </div>
           </div>
         </div>
@@ -316,10 +276,12 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                 <CheckCircle className="w-5 h-5 text-[#16a34a] mt-0.5" />
                 <div className="flex-1">
                   <p className="text-black mb-1">Domain Verified</p>
-                  <p className="text-[#676b5f]">Your page is now accessible at:</p>
-                  <a 
-                    href={`https://${domainStatus.domain}`} 
-                    target="_blank" 
+                  <p className="text-[#676b5f]">
+                    Your page is now accessible at:
+                  </p>
+                  <a
+                    href={`https://${domainStatus.domain}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#8129d9] hover:underline mt-1 inline-block"
                   >
@@ -355,7 +317,7 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
               </div>
             </div>
 
-            <Button 
+            <Button
               onClick={() => setShowDomainDialog(true)}
               className="bg-[#8129d9] hover:bg-[#7020c0] text-white"
             >
@@ -397,7 +359,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           </div>
 
           <div>
-            <label className="block mb-2 text-sm text-[#676b5f]">Display Name</label>
+            <label className="block mb-2 text-sm text-[#676b5f]">
+              Display Name
+            </label>
             <input
               type="text"
               value={displayName}
@@ -416,9 +380,12 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                     showAnalytics,
                     hideVielinkLogo,
                     emailNotifications,
-                    weeklyReports
+                    weeklyReports,
                   };
-                  localStorage.setItem(`settings_${user.username}`, JSON.stringify(settings));
+                  localStorage.setItem(
+                    `settings_${user.username}`,
+                    JSON.stringify(settings)
+                  );
                   onUpdateDisplayName(newValue);
                 }, 500);
                 setDisplayNameTimer(timer);
@@ -426,11 +393,13 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
               placeholder="Your Name"
               className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f]"
             />
-            <p className="text-xs text-[#676b5f] mt-1">Changes are saved automatically</p>
+            <p className="text-xs text-[#676b5f] mt-1">
+              Changes are saved automatically
+            </p>
           </div>
 
           <div className="pt-4">
-            <Button 
+            <Button
               onClick={() => setShowPasswordDialog(true)}
               variant="outline"
               className="w-full"
@@ -450,7 +419,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           <div className="flex items-center justify-between">
             <div>
               <p className="text-black">Public Profile</p>
-              <p className="text-[#676b5f]">Make your profile visible to everyone</p>
+              <p className="text-[#676b5f]">
+                Make your profile visible to everyone
+              </p>
             </div>
             <Switch
               checked={isProfilePublic}
@@ -461,7 +432,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           <div className="flex items-center justify-between">
             <div>
               <p className="text-black">Show Analytics</p>
-              <p className="text-[#676b5f]">Display view count on your profile</p>
+              <p className="text-[#676b5f]">
+                Display view count on your profile
+              </p>
             </div>
             <Switch
               checked={showAnalytics}
@@ -479,7 +452,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           <div className="flex items-center justify-between">
             <div>
               <p className="text-black">Hide Vielink Logo</p>
-              <p className="text-[#676b5f]">Remove the Vielink logo from your profile</p>
+              <p className="text-[#676b5f]">
+                Remove the Vielink logo from your profile
+              </p>
             </div>
             <Switch
               checked={hideVielinkLogo}
@@ -493,13 +468,18 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                   showAnalytics,
                   hideVielinkLogo: checked,
                   emailNotifications,
-                  weeklyReports
+                  weeklyReports,
                 };
-                localStorage.setItem(`settings_${user.username}`, JSON.stringify(settings));
+                localStorage.setItem(
+                  `settings_${user.username}`,
+                  JSON.stringify(settings)
+                );
                 if (onSettingsChange) {
                   onSettingsChange(settings);
                 }
-                toast.success(checked ? 'VieLink logo hidden' : 'VieLink logo shown');
+                toast.success(
+                  checked ? "VieLink logo hidden" : "VieLink logo shown"
+                );
               }}
             />
           </div>
@@ -517,7 +497,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           <div className="flex items-center justify-between">
             <div>
               <p className="text-black">Email Notifications</p>
-              <p className="text-[#676b5f]">Receive email updates about your account</p>
+              <p className="text-[#676b5f]">
+                Receive email updates about your account
+              </p>
             </div>
             <Switch
               checked={emailNotifications}
@@ -528,7 +510,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           <div className="flex items-center justify-between">
             <div>
               <p className="text-black">Weekly Reports</p>
-              <p className="text-[#676b5f]">Get weekly analytics reports via email</p>
+              <p className="text-[#676b5f]">
+                Get weekly analytics reports via email
+              </p>
             </div>
             <Switch
               checked={weeklyReports}
@@ -539,7 +523,7 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
       </div>
 
       {/* Save Button */}
-      <Button 
+      <Button
         onClick={handleSaveSettings}
         className="w-full bg-[#8129d9] hover:bg-[#7020c0] text-white"
       >
@@ -554,7 +538,8 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
         </div>
 
         <p className="text-[#676b5f] mb-4">
-          Once you delete your account, there is no going back. Please be certain.
+          Once you delete your account, there is no going back. Please be
+          certain.
         </p>
 
         <Button
@@ -624,7 +609,7 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                       <div className="flex items-center gap-2">
                         <code className="text-black">cname.vielink.vn</code>
                         <button
-                          onClick={() => copyToClipboard('cname.vielink.vn')}
+                          onClick={() => copyToClipboard("cname.vielink.vn")}
                           className="text-[#8129d9] hover:text-[#7020c0]"
                         >
                           <Copy className="w-4 h-4" />
@@ -639,8 +624,9 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                     <div>
                       <p className="text-black mb-1">DNS Propagation Time</p>
                       <p className="text-[#676b5f]">
-                        DNS changes can take up to 48 hours to propagate globally. 
-                        You can verify your domain after making the changes.
+                        DNS changes can take up to 48 hours to propagate
+                        globally. You can verify your domain after making the
+                        changes.
                       </p>
                     </div>
                   </div>
@@ -657,7 +643,8 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
                 <h4 className="text-black">Verify Domain</h4>
               </div>
               <p className="text-[#676b5f] mb-4">
-                After configuring your DNS settings, click the button below to verify your domain.
+                After configuring your DNS settings, click the button below to
+                verify your domain.
               </p>
             </div>
           </div>
@@ -674,7 +661,7 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
               disabled={isVerifying || !customDomain}
               className="bg-[#8129d9] hover:bg-[#7020c0]"
             >
-              {isVerifying ? 'Verifying...' : 'Verify Domain'}
+              {isVerifying ? "Verifying..." : "Verify Domain"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -686,7 +673,8 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
           <DialogHeader>
             <DialogTitle className="text-red-500">Delete Account</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete your account? This action cannot be undone.
+              Are you sure you want to delete your account? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
 
@@ -721,162 +709,53 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
 
       {/* Change Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5" />
               Change Password
             </DialogTitle>
             <DialogDescription>
-              Update your account password
+              We'll send you an email with a link to reset your password
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Current Password */}
-            <div>
-              <label className="block mb-2 text-black">Current Password</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setCurrentPassword(value);
-                  // Real-time validation
-                  if (value && !validateCurrentPassword(value)) {
-                    setCurrentPasswordError('Incorrect password');
-                  } else {
-                    setCurrentPasswordError('');
-                  }
-                }}
-                placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f] border-2 ${
-                  currentPassword && !validateCurrentPassword(currentPassword)
-                    ? 'border-red-500'
-                    : currentPassword && validateCurrentPassword(currentPassword)
-                    ? 'border-green-500'
-                    : 'border-transparent'
-                }`}
-              />
-              {currentPasswordError && (
-                <div className="flex items-center gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500" />
-                  <p className="text-red-500 text-sm">{currentPasswordError}</p>
+          <div className="space-y-4">
+            <div className="bg-[#f6f7f5] p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-[#8129d9] mt-0.5" />
+                <div>
+                  <p className="text-black font-medium mb-1">Reset via Email</p>
+                  <p className="text-[#676b5f] text-sm">
+                    A password reset link will be sent to{" "}
+                    <strong>{user.email}</strong>
+                  </p>
                 </div>
-              )}
-              {currentPassword && validateCurrentPassword(currentPassword) && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <p className="text-green-600 text-sm">Password verified</p>
-                </div>
-              )}
+              </div>
             </div>
 
-            {/* New Password */}
-            <div>
-              <label className="block mb-2 text-black">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => {
-                  setNewPassword(e.target.value);
-                  setNewPasswordError('');
-                }}
-                placeholder="••••••••"
-                className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f]"
-              />
-              {/* Real-time password requirements */}
-              {newPassword && (
-                <div className="mt-3 space-y-2 bg-[#f6f7f5] p-3 rounded-lg">
-                  <p className="text-xs text-[#676b5f] mb-2">Password requirements:</p>
-                  {Object.entries(validatePasswordStrength(newPassword)).map(([key, isValid]) => {
-                    const labels = {
-                      minLength: 'At least 8 characters',
-                      hasLowercase: 'One lowercase letter',
-                      hasUppercase: 'One uppercase letter',
-                      hasNumber: 'One number',
-                      hasSpecial: 'One special character (@$!%*?&)'
-                    };
-                    return (
-                      <div key={key} className="flex items-center gap-2">
-                        {isValid ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <X className="w-4 h-4 text-red-500" />
-                        )}
-                        <p className={`text-sm ${
-                          isValid ? 'text-green-600' : 'text-red-500'
-                        }`}>
-                          {labels[key as keyof typeof labels]}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block mb-2 text-black">Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setConfirmPassword(value);
-                  // Real-time validation
-                  if (value && value !== newPassword) {
-                    setConfirmPasswordError('Passwords do not match');
-                  } else {
-                    setConfirmPasswordError('');
-                  }
-                }}
-                placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f] border-2 ${
-                  confirmPassword && confirmPassword !== newPassword
-                    ? 'border-red-500'
-                    : confirmPassword && confirmPassword === newPassword && newPassword
-                    ? 'border-green-500'
-                    : 'border-transparent'
-                }`}
-              />
-              {confirmPasswordError && (
-                <div className="flex items-center gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500" />
-                  <p className="text-red-500 text-sm">{confirmPasswordError}</p>
-                </div>
-              )}
-              {confirmPassword && confirmPassword === newPassword && newPassword && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <p className="text-green-600 text-sm">Passwords match</p>
-                </div>
-              )}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-blue-800 text-sm">
+                After clicking the link in your email, you'll be able to set a
+                new password.
+              </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setShowPasswordDialog(false);
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmPassword('');
-                setCurrentPasswordError('');
-                setNewPasswordError('');
-                setConfirmPasswordError('');
-              }}
+              onClick={() => setShowPasswordDialog(false)}
+              disabled={isSendingEmail}
             >
               Cancel
             </Button>
             <Button
               onClick={handleChangePassword}
-              disabled={!isPasswordValid()}
-              className="bg-[#8129d9] hover:bg-[#7020c0] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSendingEmail}
+              className="bg-[#8129d9] hover:bg-[#7020c0]"
             >
-              Update Password
+              {isSendingEmail ? "Sending..." : "Send Reset Email"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -884,17 +763,22 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
 
       {/* Pricing Dialog */}
       <Dialog open={showPricingDialog} onOpenChange={setShowPricingDialog}>
-        <DialogContent className="max-w-[1400px] p-0 bg-transparent border-0" aria-describedby="pricing-description">
+        <DialogContent
+          className="max-w-[1400px] p-0 bg-transparent border-0"
+          aria-describedby="pricing-description"
+        >
           <DialogHeader className="sr-only">
             <DialogTitle>Select Your Plan</DialogTitle>
             <DialogDescription id="pricing-description">
               Choose the perfect pricing plan for your needs
             </DialogDescription>
           </DialogHeader>
-          <Pricing onSelectPlan={(plan) => {
-            toast.success(`Selected ${plan} plan!`);
-            setShowPricingDialog(false);
-          }} />
+          <Pricing
+            onSelectPlan={(plan) => {
+              toast.success(`Selected ${plan} plan!`);
+              setShowPricingDialog(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>
