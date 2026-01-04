@@ -13,6 +13,8 @@ import {
 import { LoadingScreen, ProtectedRoute } from "@/shared/components";
 import { isFirebaseConfigured } from "@/infrastructure/firebase";
 import { toast } from "sonner";
+import ForgotPasswordPage from "@/components/ForgotPasswordPage";
+import ResetPasswordPage from "@/components/ResetPasswordPage";
 
 export function App() {
   const {
@@ -31,8 +33,14 @@ export function App() {
     async (email: string, password: string) => {
       const result = await login(email, password);
 
-      // After login show dashboard selector — user picks page or creates new
-      navigate("/dashboard");
+      // After login decide where to send the user:
+      // - if they have existing pages, go to their first page dashboard
+      // - otherwise send them to create-username
+      if (result?.hasExistingPage && result.firstPageUsername) {
+        navigate(`/dashboard/${result.firstPageUsername}`);
+      } else {
+        navigate("/create-username");
+      }
     },
     [login, navigate]
   );
@@ -40,10 +48,12 @@ export function App() {
   // Handle signup with navigation
   const handleSignup = useCallback(
     async (email: string, password: string) => {
-      await signup(email, password);
-      navigate("/create-username");
+      const result = await signup(email, password);
+      // Don't navigate - user needs to verify email first
+      // SignupForm will show "check your email" message
+      return result;
     },
-    [signup, navigate]
+    [signup]
   );
 
   // Handle username creation with navigation
@@ -74,6 +84,19 @@ export function App() {
     navigate("/login");
     toast.success("You have been logged out");
   }, [logout, navigate]);
+
+  // Handle redirect after email verification (Firebase handles verification, just show success)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get("verified");
+
+    if (verified === "true") {
+      // User was redirected after verifying email via Firebase's hosted page
+      window.history.replaceState({}, document.title, "/login");
+      toast.success("Email verified successfully! Please sign in.");
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
 
   // Auto-redirect authenticated users from login/signup pages
   useEffect(() => {
@@ -176,23 +199,14 @@ export function App() {
       <Route
         path="/forgot-password"
         element={
-          <div className="min-h-screen bg-white flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-black mb-4">
-                Forgot Password
-              </h1>
-              <p className="text-[#676b5f] mb-8">
-                Password reset functionality is available in the complete
-                application.
-              </p>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-6 py-3 bg-[#8129d9] text-white rounded-full hover:bg-[#7020c0] transition-colors"
-              >
-                Back to Login
-              </button>
-            </div>
-          </div>
+          <ForgotPasswordPage onSwitchToLogin={() => navigate("/login")} />
+        }
+      />
+
+      <Route
+        path="/reset-password"
+        element={
+          <ResetPasswordPage onResetSuccess={() => navigate("/login")} />
         }
       />
 

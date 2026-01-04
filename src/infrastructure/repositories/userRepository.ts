@@ -8,6 +8,10 @@ import {
   updateDoc,
   serverTimestamp,
   DocumentSnapshot,
+  collection,
+  query,
+  where,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { User } from '@/shared/types';
@@ -18,13 +22,16 @@ export interface CreateUserDTO {
   avatarUrl?: string;
   authProvider?: 'email' | 'google';
   proPurchase?: boolean;
+  emailVerified?: boolean;
 }
 
 export interface UpdateUserDTO {
   fullName?: string;
   avatarUrl?: string;
+  authProvider?: 'email' | 'google';
   proPurchase?: boolean;
   proExpiresAt?: Date;
+  emailVerified?: boolean;
 }
 
 class UserRepository {
@@ -40,6 +47,21 @@ class UserRepository {
   }
 
   /**
+   * Find user by email
+   */
+  async findByEmail(email: string): Promise<User | null> {
+    const q = query(
+      collection(db, this.collectionName),
+      where('email', '==', email)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+      return null;
+    }
+    return this.mapToModel(querySnapshot.docs[0]);
+  }
+
+  /**
    * Create new user
    */
   async create(id: string, data: CreateUserDTO): Promise<User> {
@@ -51,6 +73,7 @@ class UserRepository {
       avatarUrl: data.avatarUrl || '',
       authProvider: data.authProvider || 'email',
       proPurchase: data.proPurchase || false,
+      emailVerified: data.emailVerified || false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };

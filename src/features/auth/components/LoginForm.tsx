@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { getErrorMessage } from '@/shared/lib/errors';
 import svgPaths from '@/imports/svg-du8004kdwc';
+import { authService } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -16,6 +18,7 @@ export function LoginForm({
   onSwitchToSignup, 
   onSwitchToForgotPassword 
 }: LoginFormProps) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -64,9 +67,23 @@ export function LoginForm({
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Placeholder for Google OAuth integration
-    alert('Google OAuth integration would happen here. This is a demo.');
+  const handleGoogleLogin = async () => {
+    setIsSubmitting(true);
+    try {
+      const result = await authService.signInWithGoogle();
+      
+      // Navigate based on whether user has pages
+      if (result.hasExistingPage && result.firstPageUsername) {
+        navigate(`/dashboard/${result.firstPageUsername}`);
+      } else {
+        navigate('/create-username');
+      }
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setEmailError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
