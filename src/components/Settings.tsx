@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { deleteUser } from 'firebase/auth';
 import { auth } from '@/infrastructure/firebase';
-import { Globe, Lock, Bell, Trash2, CheckCircle, AlertCircle, Copy, Crown, Check, X } from 'lucide-react';
+import { authService } from '@/features/auth/services/authService';
+import { Globe, Lock, Bell, Trash2, CheckCircle, AlertCircle, Copy, Crown, Check, X, Mail } from 'lucide-react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Badge } from './ui/badge';
@@ -35,20 +36,12 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Account settings
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   
-  // Validation errors
-  const [_emailError, _setEmailError] = useState('');
-  const [currentPasswordError, setCurrentPasswordError] = useState('');
-  const [_newPasswordError, setNewPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
-  
   // Dialogs
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showPricingDialog, setShowPricingDialog] = useState(false);
   
   // Debounce timer for display name
@@ -152,82 +145,19 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
     }
   };
 
-  const handleChangePassword = () => {
-    // Clear previous errors
-    setCurrentPasswordError('');
-    setNewPasswordError('');
-    setConfirmPasswordError('');
+  const handleChangePassword = async () => {
+    setIsSendingEmail(true);
     
-    // Validate fields are filled
-    if (!currentPassword) {
-      setCurrentPasswordError('Current password is required');
-      return;
-    }
-    
-    if (!newPassword) {
-      setNewPasswordError('New password is required');
-      return;
-    }
-    
-    if (!confirmPassword) {
-      setConfirmPasswordError('Confirm password is required');
-      return;
-    }
-    
-    // Get stored user data to verify current password
-    const storedUser = localStorage.getItem(`user_${user.username}`);
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      if (userData.password !== currentPassword) {
-        setCurrentPasswordError('Current password is incorrect');
-        return;
-      }
-    }
-    
-    // Validate password strength
-    // At least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    
-    if (!passwordRegex.test(newPassword)) {
-      const errors = [];
-      if (newPassword.length < 8) {
-        errors.push('at least 8 characters');
-      }
-      if (!/(?=.*[a-z])/.test(newPassword)) {
-        errors.push('one lowercase letter');
-      }
-      if (!/(?=.*[A-Z])/.test(newPassword)) {
-        errors.push('one uppercase letter');
-      }
-      if (!/(?=.*\d)/.test(newPassword)) {
-        errors.push('one number');
-      }
-      if (!/(?=.*[@$!%*?&])/.test(newPassword)) {
-        errors.push('one special character (@$!%*?&)');
-      }
+    try {
+      await authService.sendPasswordResetEmail(user.email);
       
-      setNewPasswordError(`Password must contain ${errors.join(', ')}`);
-      return;
+      toast.success('Password reset email sent! Check your inbox.');
+      setShowPasswordDialog(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send reset email');
+    } finally {
+      setIsSendingEmail(false);
     }
-    
-    // Validate confirm password
-    if (newPassword !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match');
-      return;
-    }
-    
-    // Update password in localStorage
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      userData.password = newPassword;
-      localStorage.setItem(`user_${user.username}`, JSON.stringify(userData));
-    }
-    
-    toast.success('Password changed successfully');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowPasswordDialog(false);
   };
 
   const handleDeleteAccount = () => {
@@ -273,38 +203,6 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
-  };
-
-  // Password validation helpers
-  const validateCurrentPassword = (password: string) => {
-    return password === 'Hihi34@';
-  };
-
-  const validatePasswordStrength = (password: string) => {
-    return {
-      minLength: password.length >= 8,
-      hasLowercase: /[a-z]/.test(password),
-      hasUppercase: /[A-Z]/.test(password),
-      hasNumber: /\d/.test(password),
-      hasSpecial: /[@$!%*?&]/.test(password)
-    };
-  };
-
-  const isPasswordValid = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) return false;
-    
-    // Check current password
-    if (!validateCurrentPassword(currentPassword)) return false;
-    
-    // Check new password strength
-    const strength = validatePasswordStrength(newPassword);
-    const isStrong = Object.values(strength).every(v => v);
-    if (!isStrong) return false;
-    
-    // Check confirm password matches
-    if (newPassword !== confirmPassword) return false;
-    
-    return true;
   };
 
   return (
@@ -748,162 +646,51 @@ export default function Settings({ user, onLogout, onUpdateDisplayName, onSettin
 
       {/* Change Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5" />
               Change Password
             </DialogTitle>
             <DialogDescription>
-              Update your account password
+              We'll send you an email with a link to reset your password
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Current Password */}
-            <div>
-              <label className="block mb-2 text-black">Current Password</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setCurrentPassword(value);
-                  // Real-time validation
-                  if (value && !validateCurrentPassword(value)) {
-                    setCurrentPasswordError('Incorrect password');
-                  } else {
-                    setCurrentPasswordError('');
-                  }
-                }}
-                placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f] border-2 ${
-                  currentPassword && !validateCurrentPassword(currentPassword)
-                    ? 'border-red-500'
-                    : currentPassword && validateCurrentPassword(currentPassword)
-                    ? 'border-green-500'
-                    : 'border-transparent'
-                }`}
-              />
-              {currentPasswordError && (
-                <div className="flex items-center gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500" />
-                  <p className="text-red-500 text-sm">{currentPasswordError}</p>
+          <div className="space-y-4">
+            <div className="bg-[#f6f7f5] p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-[#8129d9] mt-0.5" />
+                <div>
+                  <p className="text-black font-medium mb-1">Reset via Email</p>
+                  <p className="text-[#676b5f] text-sm">
+                    A password reset link will be sent to <strong>{user.email}</strong>
+                  </p>
                 </div>
-              )}
-              {currentPassword && validateCurrentPassword(currentPassword) && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <p className="text-green-600 text-sm">Password verified</p>
-                </div>
-              )}
+              </div>
             </div>
 
-            {/* New Password */}
-            <div>
-              <label className="block mb-2 text-black">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => {
-                  setNewPassword(e.target.value);
-                  setNewPasswordError('');
-                }}
-                placeholder="••••••••"
-                className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f]"
-              />
-              {/* Real-time password requirements */}
-              {newPassword && (
-                <div className="mt-3 space-y-2 bg-[#f6f7f5] p-3 rounded-lg">
-                  <p className="text-xs text-[#676b5f] mb-2">Password requirements:</p>
-                  {Object.entries(validatePasswordStrength(newPassword)).map(([key, isValid]) => {
-                    const labels = {
-                      minLength: 'At least 8 characters',
-                      hasLowercase: 'One lowercase letter',
-                      hasUppercase: 'One uppercase letter',
-                      hasNumber: 'One number',
-                      hasSpecial: 'One special character (@$!%*?&)'
-                    };
-                    return (
-                      <div key={key} className="flex items-center gap-2">
-                        {isValid ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <X className="w-4 h-4 text-red-500" />
-                        )}
-                        <p className={`text-sm ${
-                          isValid ? 'text-green-600' : 'text-red-500'
-                        }`}>
-                          {labels[key as keyof typeof labels]}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block mb-2 text-black">Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setConfirmPassword(value);
-                  // Real-time validation
-                  if (value && value !== newPassword) {
-                    setConfirmPasswordError('Passwords do not match');
-                  } else {
-                    setConfirmPasswordError('');
-                  }
-                }}
-                placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f] border-2 ${
-                  confirmPassword && confirmPassword !== newPassword
-                    ? 'border-red-500'
-                    : confirmPassword && confirmPassword === newPassword && newPassword
-                    ? 'border-green-500'
-                    : 'border-transparent'
-                }`}
-              />
-              {confirmPasswordError && (
-                <div className="flex items-center gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500" />
-                  <p className="text-red-500 text-sm">{confirmPasswordError}</p>
-                </div>
-              )}
-              {confirmPassword && confirmPassword === newPassword && newPassword && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <p className="text-green-600 text-sm">Passwords match</p>
-                </div>
-              )}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-blue-800 text-sm">
+                After clicking the link in your email, you'll be able to set a new password.
+              </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setShowPasswordDialog(false);
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmPassword('');
-                setCurrentPasswordError('');
-                setNewPasswordError('');
-                setConfirmPasswordError('');
-              }}
+              onClick={() => setShowPasswordDialog(false)}
+              disabled={isSendingEmail}
             >
               Cancel
             </Button>
             <Button
               onClick={handleChangePassword}
-              disabled={!isPasswordValid()}
-              className="bg-[#8129d9] hover:bg-[#7020c0] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSendingEmail}
+              className="bg-[#8129d9] hover:bg-[#7020c0]"
             >
-              Update Password
+              {isSendingEmail ? 'Sending...' : 'Send Reset Email'}
             </Button>
           </DialogFooter>
         </DialogContent>

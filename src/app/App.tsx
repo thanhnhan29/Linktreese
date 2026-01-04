@@ -13,6 +13,8 @@ import {
 import { LoadingScreen, ProtectedRoute } from "@/shared/components";
 import { isFirebaseConfigured } from "@/infrastructure/firebase";
 import { toast } from "sonner";
+import ForgotPasswordPage from "@/components/ForgotPasswordPage";
+import ResetPasswordPage from "@/components/ResetPasswordPage";
 
 export function App() {
   const {
@@ -197,23 +199,18 @@ export function App() {
       <Route
         path="/forgot-password"
         element={
-          <div className="min-h-screen bg-white flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-black mb-4">
-                Forgot Password
-              </h1>
-              <p className="text-[#676b5f] mb-8">
-                Password reset functionality is available in the complete
-                application.
-              </p>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-6 py-3 bg-[#8129d9] text-white rounded-full hover:bg-[#7020c0] transition-colors"
-              >
-                Back to Login
-              </button>
-            </div>
-          </div>
+          <ForgotPasswordPage
+            onSwitchToLogin={() => navigate("/login")}
+          />
+        }
+      />
+
+      <Route
+        path="/reset-password"
+        element={
+          <ResetPasswordPage
+            onResetSuccess={() => navigate("/login")}
+          />
         }
       />
 
