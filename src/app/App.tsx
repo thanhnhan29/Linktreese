@@ -88,13 +88,13 @@ export function App() {
   // Handle redirect after email verification (Firebase handles verification, just show success)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const verified = urlParams.get('verified');
-    
-    if (verified === 'true') {
+    const verified = urlParams.get("verified");
+
+    if (verified === "true") {
       // User was redirected after verifying email via Firebase's hosted page
-      window.history.replaceState({}, document.title, '/login');
-      toast.success('Email verified successfully! Please sign in.');
-      navigate('/login', { replace: true });
+      window.history.replaceState({}, document.title, "/login");
+      toast.success("Email verified successfully! Please sign in.");
+      navigate("/login", { replace: true });
     }
   }, [navigate]);
 
@@ -199,18 +199,14 @@ export function App() {
       <Route
         path="/forgot-password"
         element={
-          <ForgotPasswordPage
-            onSwitchToLogin={() => navigate("/login")}
-          />
+          <ForgotPasswordPage onSwitchToLogin={() => navigate("/login")} />
         }
       />
 
       <Route
         path="/reset-password"
         element={
-          <ResetPasswordPage
-            onResetSuccess={() => navigate("/login")}
-          />
+          <ResetPasswordPage onResetSuccess={() => navigate("/login")} />
         }
       />
 

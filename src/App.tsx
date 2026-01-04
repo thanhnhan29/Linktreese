@@ -92,13 +92,13 @@ export default function App() {
   useEffect(() => {
     // Check URL path first
     const path = window.location.pathname;
-    if (path === '/forgot-password') {
-      setCurrentPage('forgot-password');
+    if (path === "/forgot-password") {
+      setCurrentPage("forgot-password");
       return;
-    } else if (path === '/reset-password') {
+    } else if (path === "/reset-password") {
       // Will be handled by oobCode check below if coming from email
       // Otherwise just show the page
-      setCurrentPage('reset-password');
+      setCurrentPage("reset-password");
     }
 
     // Check if URL contains oobCode parameter for email verification or password reset
@@ -421,7 +421,7 @@ export default function App() {
           onLogin={handleLogin}
           onSwitchToSignup={() => setCurrentPage("signup")}
           onSwitchToForgotPassword={() => {
-            window.history.pushState({}, '', '/forgot-password');
+            window.history.pushState({}, "", "/forgot-password");
             setCurrentPage("forgot-password");
           }}
         />
@@ -483,7 +483,7 @@ export default function App() {
         <ForgotPasswordPage
           onSwitchToLogin={() => {
             isSignupInProgress = false; // Clear flag when switching to login
-            window.history.pushState({}, '', '/');
+            window.history.pushState({}, "", "/");
             setCurrentPage("login");
           }}
         />
@@ -495,9 +495,9 @@ export default function App() {
   if (currentPage === "reset-password") {
     return (
       <>
-        <ResetPasswordPage 
+        <ResetPasswordPage
           onResetSuccess={() => {
-            window.history.pushState({}, '', '/');
+            window.history.pushState({}, "", "/");
             setCurrentPage("login");
           }}
         />
