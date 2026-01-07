@@ -143,9 +143,11 @@ export default function PublicBioPage() {
   const mappedBlocks = blocks.map((block) => ({
     id: block.id,
     type: block.type,
+    title: block.title,
     data: block.data,
     isActive: block.isVisible,
-    order: block.sortOrder,
+    isVisible: block.isVisible,
+    order: block.sortOrder ?? 0,
   }));
 
   return (

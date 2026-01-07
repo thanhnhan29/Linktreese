@@ -250,7 +250,7 @@ class AnalyticsService {
       id: string;
       title: string;
       type: string;
-      clickCount: number;
+      clickCount?: number;
     }>
   ): BlockAnalytics[] {
     const blockClicks = events.filter(

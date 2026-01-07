@@ -1,9 +1,11 @@
 // src/features/bio-page/components/Dashboard.tsx
 // Main dashboard component using the new architecture
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { User, LogOut, Copy, CheckCheck, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { writeBatch, doc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/infrastructure/firebase";
 import {
   Dialog,
   DialogContent,
@@ -60,10 +62,111 @@ export default function Dashboard({
     updateSettings,
   } = useBioPage(userId, currentBioPageUsername);
 
-  const { links, addLink, updateLink, deleteLink, toggleLink, moveLink } =
+  const { links, addLink: addLinkBase, updateLink, deleteLink, toggleLink } =
     useLinks(bioPage?.id || null);
 
-  const { blocks } = useBlocks(bioPage?.id || null);
+  const { blocks, addBlock: addBlockBase, updateBlock, deleteBlock, toggleBlock } = useBlocks(bioPage?.id || null);
+
+  // Wrapper for addLink to use unified order
+  const addLink = useCallback(async (
+    title: string,
+    url: string,
+    type?: string,
+    platform?: string,
+    data?: Record<string, unknown>
+  ) => {
+    // Calculate max order from BOTH links and blocks
+    const maxLinkOrder = links.reduce((max, link) => Math.max(max, link.order ?? 0), -1);
+    const maxBlockOrder = blocks.reduce((max, block) => Math.max(max, block.sortOrder ?? 0), -1);
+    const newOrder = Math.max(maxLinkOrder, maxBlockOrder) + 1;
+    
+    // Pass order via data since we can't modify service directly
+    await addLinkBase(title, url, type, platform, { ...data, _unifiedOrder: newOrder });
+  }, [addLinkBase, links, blocks]);
+
+  // Wrapper for addBlock to use unified order  
+  const addBlock = useCallback(async (
+    type: 'ecommerce' | 'donate' | 'contact' | 'chat',
+    title: string,
+    data: Record<string, unknown>
+  ) => {
+    // Calculate max order from BOTH links and blocks
+    const maxLinkOrder = links.reduce((max, link) => Math.max(max, link.order ?? 0), -1);
+    const maxBlockOrder = blocks.reduce((max, block) => Math.max(max, block.sortOrder ?? 0), -1);
+    const newOrder = Math.max(maxLinkOrder, maxBlockOrder) + 1;
+    
+    // Pass order via data since we can't modify service directly
+    await addBlockBase(type, title, { ...data, _unifiedOrder: newOrder });
+  }, [addBlockBase, links, blocks]);
+
+  // Unified move function for cross-type ordering - supports direction or target index
+  const moveUnified = useCallback(async (
+    id: string, 
+    itemType: 'link' | 'block', 
+    directionOrTargetIndex: "up" | "down" | number
+  ) => {
+    if (!bioPage?.id) return;
+    
+    // Create unified items list with same order space
+    type UnifiedItem = { id: string; type: 'link' | 'block'; order: number };
+    const allItems: UnifiedItem[] = [
+      ...links.map((link, idx) => ({ id: link.id, type: 'link' as const, order: link.order ?? idx })),
+      ...blocks.map((block, idx) => ({ id: block.id, type: 'block' as const, order: block.sortOrder ?? (links.length + idx) })),
+    ].sort((a, b) => a.order - b.order);
+
+    // Find current item
+    const fromIndex = allItems.findIndex(item => item.id === id && item.type === itemType);
+    if (fromIndex === -1) {
+      console.error('[moveUnified] Item not found:', id, itemType);
+      return;
+    }
+
+    // Calculate target index
+    let toIndex: number;
+    if (typeof directionOrTargetIndex === 'number') {
+      toIndex = directionOrTargetIndex;
+    } else {
+      toIndex = directionOrTargetIndex === "up" ? fromIndex - 1 : fromIndex + 1;
+    }
+
+    // Validate bounds
+    if (toIndex < 0 || toIndex >= allItems.length || fromIndex === toIndex) {
+      console.log('[moveUnified] Cannot move - invalid target index');
+      return;
+    }
+
+    console.log('[moveUnified] Moving item from index', fromIndex, 'to index', toIndex);
+
+    try {
+      const batch = writeBatch(db);
+      
+      // Create new order array by removing item from old position and inserting at new
+      const newOrder = [...allItems];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
+
+      // Update all affected items with their new sequential order
+      newOrder.forEach((item, newOrderIndex) => {
+        const oldOrder = item.order;
+        if (oldOrder !== newOrderIndex) {
+          if (item.type === 'link') {
+            batch.update(doc(db, "bio_pages", bioPage.id, "links", item.id), { order: newOrderIndex });
+          } else {
+            batch.update(doc(db, "bio_pages", bioPage.id, "blocks", item.id), { 
+              sortOrder: newOrderIndex, 
+              updatedAt: serverTimestamp() 
+            });
+          }
+        }
+      });
+
+      await batch.commit();
+      console.log('[moveUnified] Move successful - item now at index', toIndex);
+    } catch (e) {
+      console.error("Error in moveUnified:", e);
+      throw e;
+    }
+  }, [bioPage?.id, links, blocks]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -278,6 +381,7 @@ export default function Dashboard({
             {currentTab === "Links" && (
               <LinkEditor
                 links={mappedLinks as any}
+                blocks={blocks}
                 user={{ username: currentBioPageUsername, email: userEmail }}
                 profileImage={bioPage.avatarUrl || ""}
                 bio={bioPage.bioDescription || ""}
@@ -285,7 +389,11 @@ export default function Dashboard({
                 onUpdateLink={updateLink}
                 onDeleteLink={deleteLink}
                 onToggleLink={toggleLink}
-                onMoveLink={moveLink}
+                onAddBlock={addBlock}
+                onUpdateBlock={updateBlock}
+                onDeleteBlock={deleteBlock}
+                onToggleBlock={toggleBlock}
+                onMoveUnified={moveUnified}
                 onUpdateProfile={handleSaveProfile}
               />
             )}
@@ -329,7 +437,7 @@ export default function Dashboard({
               bio={bioPage.bioDescription || ""}
               profileImage={bioPage.avatarUrl || ""}
               links={mappedLinks.filter((link) => link.isActive) as any}
-              blocks={blocks as any}
+              blocks={blocks.filter((block) => block.isVisible) as any}
               appearanceConfig={
                 bioPage.themeConfig
                   ? themeConfigToAppearance(bioPage.themeConfig)

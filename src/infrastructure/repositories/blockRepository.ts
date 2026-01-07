@@ -75,17 +75,27 @@ class BlockRepository {
    * Create new block
    */
   async create(bioPageId: string, data: CreateBlockDTO): Promise<Block> {
-    // Get current max sortOrder
-    const existingBlocks = await this.findAll(bioPageId);
-    const maxOrder = existingBlocks.reduce((max, block) => Math.max(max, block.sortOrder), -1);
+    // Check if unified order was passed via data
+    let sortOrder: number;
+    const dataWithoutOrder = { ...data.data };
+    
+    if (dataWithoutOrder && typeof dataWithoutOrder._unifiedOrder === 'number') {
+      sortOrder = dataWithoutOrder._unifiedOrder;
+      delete dataWithoutOrder._unifiedOrder;
+    } else {
+      // Fallback: Get current max sortOrder from blocks only
+      const existingBlocks = await this.findAll(bioPageId);
+      const maxOrder = existingBlocks.reduce((max, block) => Math.max(max, block.sortOrder ?? 0), -1);
+      sortOrder = maxOrder + 1;
+    }
 
     const payload = {
       type: data.type,
       title: data.title,
       isVisible: data.isVisible ?? true,
-      sortOrder: maxOrder + 1,
+      sortOrder,
       clickCount: 0,
-      data: data.data,
+      data: dataWithoutOrder,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -100,10 +110,16 @@ class BlockRepository {
   }
 
   /**
-   * Update block
+   * Update block - merges data instead of replacing
    */
   async update(bioPageId: string, blockId: string, data: UpdateBlockDTO): Promise<Block> {
     const docRef = this.getBlockDoc(bioPageId, blockId);
+
+    // First, get existing block to merge data
+    const existing = await this.findById(bioPageId, blockId);
+    if (!existing) {
+      throw new Error('Block not found');
+    }
 
     const payload: Record<string, unknown> = {
       updatedAt: serverTimestamp(),
@@ -111,7 +127,14 @@ class BlockRepository {
 
     if (data.title !== undefined) payload.title = data.title;
     if (data.isVisible !== undefined) payload.isVisible = data.isVisible;
-    if (data.data !== undefined) payload.data = data.data;
+    
+    // Merge data instead of replacing completely
+    if (data.data !== undefined) {
+      payload.data = {
+        ...existing.data, // Keep existing data
+        ...data.data,     // Override with new data
+      };
+    }
 
     await updateDoc(docRef, payload);
 
@@ -143,6 +166,33 @@ class BlockRepository {
   }
 
   /**
+   * Move block up or down
+   */
+  async move(bioPageId: string, blockId: string, direction: 'up' | 'down'): Promise<void> {
+    const blocks = await this.findAll(bioPageId);
+    const index = blocks.findIndex(b => b.id === blockId);
+    
+    if (index === -1) {
+      throw new Error('Block not found');
+    }
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= blocks.length) {
+      return; // Can't move beyond boundaries
+    }
+
+    const currentBlock = blocks[index];
+    const targetBlock = blocks[targetIndex];
+
+    // Swap sortOrders using batch write
+    const batch = writeBatch(db);
+    batch.update(this.getBlockDoc(bioPageId, currentBlock.id), { sortOrder: targetBlock.sortOrder ?? targetIndex });
+    batch.update(this.getBlockDoc(bioPageId, targetBlock.id), { sortOrder: currentBlock.sortOrder ?? index });
+
+    await batch.commit();
+  }
+
+  /**
    * Reorder blocks
    */
   async reorder(bioPageId: string, orderedBlockIds: string[]): Promise<void> {
@@ -163,7 +213,7 @@ class BlockRepository {
     if (!block) return;
 
     const docRef = this.getBlockDoc(bioPageId, blockId);
-    await updateDoc(docRef, { clickCount: block.clickCount + 1 });
+    await updateDoc(docRef, { clickCount: (block.clickCount ?? 0) + 1 });
   }
 
   /**

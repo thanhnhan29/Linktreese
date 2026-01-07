@@ -5,6 +5,8 @@
 export { CreateUsernameForm } from "./components/CreateUsernameForm";
 export { default as Dashboard } from "./components/Dashboard";
 export { default as PublicBioPage } from "./components/PublicBioPage";
+export { default as DonateBlockView } from "./components/DonateBlockView";
+export { default as ContactFormBlockView } from "./components/ContactFormBlockView";
 
 // Services
 export { bioPageService } from "./services/bioPageService";
@@ -12,6 +14,9 @@ export { linkService } from "./services/linkService";
 export { blockService } from "./services/blockService";
 export { themeService } from "./services/themeService";
 export { bioWriterService } from "./services/bioWriterService";
+export { ecommerceService, PLACEHOLDER_IMAGE } from "./services/ecommerceService";
+export { donateService, DONATE_ERROR_MESSAGES } from "./services/donateService";
+export { contactService, CONTACT_ERROR_MESSAGES } from "./services/contactService";
 export type {
   CreateBioPageInput,
   UpdateBioPageInput,
@@ -41,3 +46,20 @@ export type {
   Block,
   BlockType,
 } from "@/shared/types";
+
+// Re-export block types
+export type {
+  EcommercePlatform,
+  ProductMetadata,
+  EcommerceBlockData,
+} from "@/shared/types/ecommerce";
+
+export type {
+  DonatePaymentMethod,
+  DonateBlockData,
+} from "@/shared/types/donate";
+
+export type {
+  ContactBlockData,
+  ContactFormSubmission,
+} from "@/shared/types/contact";

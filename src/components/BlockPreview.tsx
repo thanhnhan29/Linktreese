@@ -6,7 +6,35 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
-import type { Block } from "./Blocks";
+import type { Block } from "@/shared/types";
+import { contactService } from "@/features/bio-page/services/contactService";
+
+// Type definitions for block data
+interface EcommerceData {
+  url: string;
+  image: string;
+  title: string;
+  price: string;
+  platform: string;
+}
+
+interface DonateData {
+  title: string;
+  method: 'vietqr' | 'momo' | 'zalopay';
+  qrImage?: string;
+  paymentLink?: string;
+}
+
+interface ContactData {
+  title: string;
+  receiverEmail: string;
+}
+
+interface ChatData {
+  title?: string;
+  phoneNumber: string;
+  message?: string;
+}
 
 interface BlockPreviewProps {
   block: Block;
@@ -34,63 +62,55 @@ export default function BlockPreview({
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (!contactEmail.trim()) {
-      toast.error("Email is required.");
-      return;
-    }
+    // Validate using contactService
+    const validation = contactService.validateForm({
+      name: contactName,
+      email: contactEmail,
+      message: contactMessage,
+    });
 
-    if (!contactMessage.trim()) {
-      toast.error("Message is required.");
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(contactEmail)) {
-      toast.error("Please enter a valid email address.");
+    if (!validation.isValid && validation.errors) {
+      // Show first error
+      const firstError = validation.errors.name || validation.errors.email || validation.errors.message;
+      if (firstError) {
+        toast.error(firstError);
+      }
       return;
     }
 
     setIsSubmitting(true);
 
-    // Simulate sending email (mock API call)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Send message using contactService (real API)
+      const result = await contactService.sendMessage(
+        {
+          name: contactName,
+          email: contactEmail,
+          message: contactMessage,
+        },
+        block.data.receiverEmail as string
+      );
 
-      // In a real app, this would send to your backend:
-      // await fetch('/api/contact', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     name: contactName,
-      //     email: contactEmail,
-      //     message: contactMessage,
-      //     receiverEmail: block.data.receiverEmail
-      //   })
-      // });
+      if (result.success) {
+        // Clear form
+        setContactName("");
+        setContactEmail("");
+        setContactMessage("");
 
-      console.log("Contact form submitted:", {
-        name: contactName,
-        email: contactEmail,
-        message: contactMessage,
-        to: block.data.receiverEmail,
-      });
+        // Show success message
+        setShowSuccessMessage(true);
+        toast.success("Message sent successfully!");
 
-      // Clear form
-      setContactName("");
-      setContactEmail("");
-      setContactMessage("");
-
-      // Show success message
-      setShowSuccessMessage(true);
-      toast.success("Message sent successfully!");
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-        setShowContactModal(false);
-      }, 3000);
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+          setShowContactModal(false);
+        }, 3000);
+      } else {
+        toast.error(result.error || "Failed to send message. Please try again.");
+      }
     } catch (error) {
+      console.error("[BlockPreview] Contact submit error:", error);
       toast.error("Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -100,21 +120,24 @@ export default function BlockPreview({
   const handleDonateClick = () => {
     // Track click
     onBlockClick?.(block.id);
+    
+    const donateData = block.data as unknown as DonateData;
 
-    if (block.data.method === "vietqr") {
+    if (donateData.method === "vietqr") {
       // Show modal with QR code
       setShowDonateModal(true);
     } else {
       // Open payment link (Momo or ZaloPay)
-      window.open(block.data.paymentLink, "_blank");
+      window.open(donateData.paymentLink, "_blank");
     }
   };
 
   switch (block.type) {
-    case "ecommerce":
+    case "ecommerce": {
+      const ecommerceData = block.data as unknown as EcommerceData;
       return (
         <a
-          href={block.data.url}
+          href={ecommerceData.url}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => onBlockClick?.(block.id)}
@@ -126,8 +149,8 @@ export default function BlockPreview({
           }}
         >
           <img
-            src={block.data.image}
-            alt={block.data.title}
+            src={ecommerceData.image}
+            alt={ecommerceData.title}
             className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
           />
           <div className="flex-1 min-w-0 text-left">
@@ -135,13 +158,13 @@ export default function BlockPreview({
               className="text-sm truncate"
               style={{ color: buttonStyle.color }}
             >
-              {block.data.title}
+              {ecommerceData.title}
             </p>
             <p
               className="text-xs opacity-70 mt-1"
               style={{ color: buttonStyle.color }}
             >
-              {block.data.price} • {block.data.platform}
+              {ecommerceData.price} • {ecommerceData.platform}
             </p>
           </div>
           <ShoppingBag
@@ -150,8 +173,10 @@ export default function BlockPreview({
           />
         </a>
       );
+    }
 
-    case "donate":
+    case "donate": {
+      const donateData = block.data as unknown as DonateData;
       return (
         <>
           <button
@@ -163,23 +188,23 @@ export default function BlockPreview({
             }}
           >
             <Heart className="w-5 h-5" style={{ color: buttonStyle.color }} />
-            <span style={{ color: buttonStyle.color }}>{block.data.title}</span>
+            <span style={{ color: buttonStyle.color }}>{donateData.title}</span>
           </button>
 
           {/* QR Code Modal for VietQR */}
           <Dialog open={showDonateModal} onOpenChange={setShowDonateModal}>
             <DialogContent className="max-w-sm">
               <DialogHeader>
-                <DialogTitle>{block.data.title}</DialogTitle>
+                <DialogTitle>{donateData.title}</DialogTitle>
               </DialogHeader>
               <div className="py-4">
                 <p className="text-center text-sm text-[#676b5f] mb-4">
                   Scan the QR code below to support
                 </p>
-                {block.data.qrImage && (
+                {donateData.qrImage && (
                   <div className="flex justify-center">
                     <img
-                      src={block.data.qrImage}
+                      src={donateData.qrImage}
                       alt="Payment QR Code"
                       className="w-64 h-64 object-contain rounded-lg border-2 border-[#e0e2d9]"
                     />
@@ -193,8 +218,10 @@ export default function BlockPreview({
           </Dialog>
         </>
       );
+    }
 
-    case "contact":
+    case "contact": {
+      const contactData = block.data as unknown as ContactData;
       return (
         <>
           <button
@@ -209,14 +236,14 @@ export default function BlockPreview({
             }}
           >
             <Mail className="w-5 h-5" style={{ color: buttonStyle.color }} />
-            <span style={{ color: buttonStyle.color }}>{block.data.title}</span>
+            <span style={{ color: buttonStyle.color }}>{contactData.title}</span>
           </button>
 
           {/* Contact Form Modal */}
           <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>{block.data.title}</DialogTitle>
+                <DialogTitle>{contactData.title}</DialogTitle>
               </DialogHeader>
 
               {showSuccessMessage ? (
@@ -300,13 +327,13 @@ export default function BlockPreview({
           </Dialog>
         </>
       );
+    }
 
-    case "chat":
+    case "chat": {
+      const chatData = block.data as unknown as ChatData;
       return (
         <a
-          href={`https://zalo.me/${
-            block.data.phoneNumber
-          }?text=${encodeURIComponent(block.data.message)}`}
+          href={`https://zalo.me/${chatData.phoneNumber}?text=${encodeURIComponent(chatData.message || '')}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => onBlockClick?.(block.id)}
@@ -335,10 +362,11 @@ export default function BlockPreview({
             />
           </svg>
           <span style={{ color: buttonStyle.color }}>
-            {block.data.title || "Chat on Zalo"}
+            {chatData.title || "Chat on Zalo"}
           </span>
         </a>
       );
+    }
 
     default:
       return null;
