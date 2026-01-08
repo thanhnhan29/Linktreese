@@ -2,7 +2,17 @@
 // Main dashboard component using the new architecture
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { User, LogOut, Copy, CheckCheck, Download, Link as LinkIcon, Palette, BarChart3, Settings as SettingsIcon } from "lucide-react";
+import {
+  User,
+  LogOut,
+  Copy,
+  CheckCheck,
+  Download,
+  Link as LinkIcon,
+  Palette,
+  BarChart3,
+  Settings as SettingsIcon,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   writeBatch,
@@ -366,7 +376,7 @@ export default function Dashboard({
                 { name: "Links", icon: LinkIcon },
                 { name: "Appearance", icon: Palette },
                 { name: "Analytics", icon: BarChart3 },
-                { name: "Settings", icon: SettingsIcon }
+                { name: "Settings", icon: SettingsIcon },
               ].map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -379,7 +389,13 @@ export default function Dashboard({
                         : "text-[#676b5f] hover:text-[#20262e] hover:bg-gray-50"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${currentTab === tab.name ? "text-[#8129d9]" : "text-[#676b5f]"}`} />
+                    <Icon
+                      className={`w-4 h-4 ${
+                        currentTab === tab.name
+                          ? "text-[#8129d9]"
+                          : "text-[#676b5f]"
+                      }`}
+                    />
                     {tab.name}
                     {currentTab === tab.name && (
                       <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-[#8129d9] rounded-full"></span>

@@ -1,5 +1,5 @@
-﻿import { Plus } from 'lucide-react';
-import { Button } from './ui/button';
+﻿import { Plus } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface EmptyStateProps {
   title?: string;
@@ -29,7 +29,7 @@ export function EmptyState({
           {/* Background circles */}
           <circle cx="100" cy="100" r="80" fill="#e0f7ff" opacity="0.3" />
           <circle cx="100" cy="100" r="60" fill="#cceeff" opacity="0.4" />
-          
+
           {/* Link chain icon */}
           <g transform="translate(60, 60)">
             <path
@@ -56,7 +56,7 @@ export function EmptyState({
               strokeLinecap="round"
             />
           </g>
-          
+
           {/* Decorative dots */}
           <circle cx="40" cy="40" r="4" fill="#8129d9" opacity="0.3" />
           <circle cx="160" cy="50" r="5" fill="#d946ef" opacity="0.3" />
