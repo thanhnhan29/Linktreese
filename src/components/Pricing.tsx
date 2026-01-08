@@ -1,25 +1,33 @@
-import { useState } from 'react';
-import { Resizable } from 're-resizable';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { toast } from 'sonner';
-import svgPaths from '../imports/svg-xs4guo0nux';
+import { useState } from "react";
+import { Resizable } from "re-resizable";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { toast } from "sonner";
+import svgPaths from "../imports/svg-xs4guo0nux";
 
 interface PricingProps {
   userId?: string;
-  onSelectPlan?: (plan: 'free' | 'starter' | 'pro' | 'premium') => void;
+  onSelectPlan?: (plan: "free" | "starter" | "pro" | "premium") => void;
   onClose?: () => void;
 }
 
-export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps) {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annually'>('monthly');
+export default function Pricing({
+  userId,
+  onSelectPlan,
+  onClose,
+}: PricingProps) {
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annually">(
+    "monthly"
+  );
   const [size, setSize] = useState({ width: 1200, height: 600 });
   const [isUpgrading, setIsUpgrading] = useState(false);
 
-  const handleUpgradeToPro = async (plan: 'free' | 'starter' | 'pro' | 'premium') => {
+  const handleUpgradeToPro = async (
+    plan: "free" | "starter" | "pro" | "premium"
+  ) => {
     // Mock payment - bỏ qua payment gateway, set PRO luôn
     if (!userId) {
-      toast.error('User ID not found. Please login again.');
+      toast.error("User ID not found. Please login again.");
       return;
     }
 
@@ -27,26 +35,30 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
 
     try {
       // Determine if this plan should get PRO features
-      const isPro = plan === 'pro' || plan === 'premium' || plan === 'starter';
+      const isPro = plan === "pro" || plan === "premium" || plan === "starter";
 
       // Update Firestore user document (create if doesn't exist)
-      const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, {
-        proPurchase: isPro,
-        subscriptionPlan: plan,
-        upgradedAt: new Date().toISOString(),
-      }, { merge: true }); // merge: true creates doc if missing
+      const userRef = doc(db, "users", userId);
+      await setDoc(
+        userRef,
+        {
+          proPurchase: isPro,
+          subscriptionPlan: plan,
+          upgradedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ); // merge: true creates doc if missing
 
       toast.success(`Successfully upgraded to ${plan.toUpperCase()}!`);
-      
+
       // Call callback if provided
       onSelectPlan?.(plan);
-      
+
       // Close dialog if callback provided
       onClose?.();
     } catch (error) {
-      console.error('Error upgrading plan:', error);
-      toast.error('Failed to upgrade. Please try again.');
+      console.error("Error upgrading plan:", error);
+      toast.error("Failed to upgrade. Please try again.");
     } finally {
       setIsUpgrading(false);
     }
@@ -74,11 +86,11 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
       maxHeight={1000}
       className="mx-auto"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        position: 'relative',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        position: "relative",
       }}
       enable={{
         top: true,
@@ -91,13 +103,13 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
         topLeft: true,
       }}
     >
-      <div 
+      <div
         className="bg-gradient-to-br from-[#E5C5F1] to-[#D4A5E8] rounded-2xl p-6 sm:p-8 origin-top-left"
         style={{
           width: `${baseWidth}px`,
           height: `${baseHeight}px`,
           transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          transformOrigin: "top left",
         }}
       >
         {/* Header */}
@@ -107,26 +119,28 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
               Pick the perfect plan
             </h1>
           </div>
-          
+
           <div className="flex flex-col items-start sm:items-end gap-2">
-            <p className="text-xs sm:text-sm text-[#1E2330] whitespace-nowrap">Save with annual plans</p>
+            <p className="text-xs sm:text-sm text-[#1E2330] whitespace-nowrap">
+              Save with annual plans
+            </p>
             <div className="bg-white rounded-full p-1 flex items-center gap-1">
               <button
-                onClick={() => setBillingPeriod('monthly')}
+                onClick={() => setBillingPeriod("monthly")}
                 className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  billingPeriod === 'monthly'
-                    ? 'bg-[#1E2330] text-white'
-                    : 'bg-transparent text-[#1E2330]'
+                  billingPeriod === "monthly"
+                    ? "bg-[#1E2330] text-white"
+                    : "bg-transparent text-[#1E2330]"
                 }`}
               >
                 Monthly
               </button>
               <button
-                onClick={() => setBillingPeriod('annually')}
+                onClick={() => setBillingPeriod("annually")}
                 className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  billingPeriod === 'annually'
-                    ? 'bg-[#1E2330] text-white'
-                    : 'bg-transparent text-[#1E2330]'
+                  billingPeriod === "annually"
+                    ? "bg-[#1E2330] text-white"
+                    : "bg-transparent text-[#1E2330]"
                 }`}
               >
                 Annually
@@ -148,14 +162,15 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
             </div>
             <div className="p-4 flex-1 flex flex-col">
               <p className="text-[#676B5F] text-xs mb-4 flex-1">
-                The VIP support plan for businesses ready to monetize and sell on a larger scale.
+                The VIP support plan for businesses ready to monetize and sell
+                on a larger scale.
               </p>
               <button
-                onClick={() => handleUpgradeToPro('premium')}
+                onClick={() => handleUpgradeToPro("premium")}
                 disabled={isUpgrading}
                 className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all disabled:opacity-50"
               >
-                {isUpgrading ? 'Processing...' : 'Get Premium'}
+                {isUpgrading ? "Processing..." : "Get Premium"}
               </button>
             </div>
           </div>
@@ -176,17 +191,22 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
             </div>
             <div className="p-4 flex-1 flex flex-col">
               <p className="text-[#676B5F] text-xs mb-4 flex-1">
-                Grow, learn about and own your following forever with a branded Linktree.
+                Grow, learn about and own your following forever with a branded
+                Linktree.
               </p>
               <button
-                onClick={() => handleUpgradeToPro('pro')}
+                onClick={() => handleUpgradeToPro("pro")}
                 disabled={isUpgrading}
                 className="w-full bg-[#FF5E0E] text-white py-2 rounded-full text-sm font-semibold hover:bg-[#E54D00] transition-all mb-3 disabled:opacity-50"
               >
-                {isUpgrading ? 'Processing...' : 'Get Pro'}
+                {isUpgrading ? "Processing..." : "Get Pro"}
               </button>
               <div className="flex items-center gap-1.5 text-[#70764D] text-[10px]">
-                <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 16 14">
+                <svg
+                  className="w-3 h-3 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 16 14"
+                >
                   <path
                     clipRule="evenodd"
                     d={svgPaths.p31f19100}
@@ -210,14 +230,15 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
             </div>
             <div className="p-4 flex-1 flex flex-col">
               <p className="text-[#676B5F] text-xs mb-4 flex-1">
-                More customization and control for creators ready to drive more traffic to and through their Linktree.
+                More customization and control for creators ready to drive more
+                traffic to and through their Linktree.
               </p>
               <button
-                onClick={() => handleUpgradeToPro('starter')}
+                onClick={() => handleUpgradeToPro("starter")}
                 disabled={isUpgrading}
                 className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all disabled:opacity-50"
               >
-                {isUpgrading ? 'Processing...' : 'Get Starter'}
+                {isUpgrading ? "Processing..." : "Get Starter"}
               </button>
             </div>
           </div>
@@ -233,14 +254,15 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
             </div>
             <div className="p-4 flex-1 flex flex-col">
               <p className="text-[#676B5F] text-xs mb-4 flex-1">
-                Unlimited links and a customizable Linktree to connect your community to everything you are.
+                Unlimited links and a customizable Linktree to connect your
+                community to everything you are.
               </p>
               <button
-                onClick={() => handleUpgradeToPro('free')}
+                onClick={() => handleUpgradeToPro("free")}
                 disabled={isUpgrading}
                 className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all disabled:opacity-50"
               >
-                {isUpgrading ? 'Processing...' : 'Join for free'}
+                {isUpgrading ? "Processing..." : "Join for free"}
               </button>
             </div>
           </div>
@@ -251,7 +273,11 @@ export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps)
           <span className="text-xs sm:text-sm font-medium underline cursor-pointer hover:no-underline">
             Explore all features
           </span>
-          <svg className="w-3 h-3 sm:w-4 sm:h-4 rotate-[270deg]" fill="none" viewBox="0 0 14 16">
+          <svg
+            className="w-3 h-3 sm:w-4 sm:h-4 rotate-[270deg]"
+            fill="none"
+            viewBox="0 0 14 16"
+          >
             <path
               clipRule="evenodd"
               d={svgPaths.p302d2800}

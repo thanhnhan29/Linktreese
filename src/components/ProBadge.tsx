@@ -9,10 +9,10 @@ interface ProBadgeProps {
   showLabel?: boolean;
 }
 
-export default function ProBadge({ 
-  isPro, 
-  size = "md", 
-  showLabel = true 
+export default function ProBadge({
+  isPro,
+  size = "md",
+  showLabel = true,
 }: ProBadgeProps) {
   if (!isPro) {
     return showLabel ? (
@@ -35,7 +35,9 @@ export default function ProBadge({
   };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 bg-gradient-to-r from-[#8129d9] to-[#d946ef] text-white font-medium rounded-full ${sizeClasses[size]}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 bg-gradient-to-r from-[#8129d9] to-[#d946ef] text-white font-medium rounded-full ${sizeClasses[size]}`}
+    >
       <Crown size={iconSizes[size]} className="fill-current" />
       {showLabel && "PRO"}
     </span>

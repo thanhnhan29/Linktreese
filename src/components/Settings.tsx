@@ -3,7 +3,14 @@ import { deleteUser } from "firebase/auth";
 import { auth } from "@/infrastructure/firebase";
 import { authService } from "@/features/auth/services/authService";
 import { db } from "@/firebase";
-import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  onSnapshot,
+} from "firebase/firestore";
 import {
   Globe,
   Lock,

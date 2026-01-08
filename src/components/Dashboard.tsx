@@ -119,30 +119,36 @@ export default function Dashboard({
 
     console.log("[Dashboard] Listening user doc:", userId);
     const userDocRef = doc(db, "users", userId);
-    const unsubscribe = onSnapshot(userDocRef, async (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setIsPro(data.proPurchase || false);
-        console.log("[Dashboard] User PRO status:", data.proPurchase);
-      } else {
-        console.log("[Dashboard] User doc does not exist, creating default doc...");
-        // Auto-create user doc with default values
-        try {
-          await setDoc(userDocRef, {
-            email: userEmail,
-            proPurchase: false,
-            subscriptionPlan: "free",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-          console.log("[Dashboard] User doc created successfully");
-        } catch (error) {
-          console.error("[Dashboard] Failed to create user doc:", error);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      async (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setIsPro(data.proPurchase || false);
+          console.log("[Dashboard] User PRO status:", data.proPurchase);
+        } else {
+          console.log(
+            "[Dashboard] User doc does not exist, creating default doc..."
+          );
+          // Auto-create user doc with default values
+          try {
+            await setDoc(userDocRef, {
+              email: userEmail,
+              proPurchase: false,
+              subscriptionPlan: "free",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+            console.log("[Dashboard] User doc created successfully");
+          } catch (error) {
+            console.error("[Dashboard] Failed to create user doc:", error);
+          }
         }
+      },
+      (err) => {
+        console.error("[Dashboard] Error listening user doc:", err);
       }
-    }, (err) => {
-      console.error('[Dashboard] Error listening user doc:', err);
-    });
+    );
 
     return () => unsubscribe();
   }, [userId, userEmail]);
