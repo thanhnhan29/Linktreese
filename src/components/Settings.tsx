@@ -351,185 +351,276 @@ export default function Settings({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-black mb-2">Settings</h2>
-        <p className="text-[#676b5f]">
-          Manage your account settings and preferences
-        </p>
-      </div>
-
-      {/* Custom Domain Section */}
-      <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 text-[#676b5f]" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-black">Custom Domain</h3>
-                <Badge
-                  className="bg-gradient-to-r from-[#8129d9] to-[#d946ef] text-white border-0 cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setShowPricingDialog(true)}
-                >
-                  <Crown className="w-3 h-3 mr-1" />
-                  PRO
-                </Badge>
-              </div>
-              <p className="text-[#676b5f] mt-1">
-                Use your own domain for your Linktree page
-              </p>
-            </div>
-          </div>
+    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05)] border border-white/50">
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h2 className="text-black mb-2">Settings</h2>
+          <p className="text-[#676b5f]">
+            Manage your account settings and preferences
+          </p>
         </div>
 
-        {userDomains && userDomains.length > 0 ? (
-          <div className="space-y-3">
-            {/* List of connected domains */}
-            {userDomains.map((domain) => (
-              <div
-                key={domain.id}
-                className="bg-[#f0fdf4] border border-[#86efac] rounded-lg p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#16a34a] mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-black font-medium mb-1">
-                      {domain.domain}
-                    </p>
-                    <p className="text-[#676b5f] text-sm">
-                      Bio Page ID: {domain.bioPageId.substring(0, 8)}...
-                    </p>
-                    <a
-                      href={`https://${domain.domain}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#8129d9] hover:underline text-sm inline-flex items-center gap-1 mt-1"
+        {/* Custom Domain Section */}
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Globe className="w-5 h-5 text-[#676b5f]" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-black">Custom Domain</h3>
+                  <Badge
+                    className="bg-gradient-to-r from-[#8129d9] to-[#d946ef] text-white border-0 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setShowPricingDialog(true)}
+                  >
+                    <Crown className="w-3 h-3 mr-1" />
+                    PRO
+                  </Badge>
+                </div>
+                <p className="text-[#676b5f] mt-1">
+                  Use your own domain for your Linktree page
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {userDomains && userDomains.length > 0 ? (
+            <div className="space-y-3">
+              {/* List of connected domains */}
+              {userDomains.map((domain) => (
+                <div
+                  key={domain.id}
+                  className="bg-[#f0fdf4] border border-[#86efac] rounded-lg p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-[#16a34a] mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-black font-medium mb-1">
+                        {domain.domain}
+                      </p>
+                      <p className="text-[#676b5f] text-sm">
+                        Bio Page ID: {domain.bioPageId.substring(0, 8)}...
+                      </p>
+                      <a
+                        href={`https://${domain.domain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#8129d9] hover:underline text-sm inline-flex items-center gap-1 mt-1"
+                      >
+                        Xem trang <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setDomainToDelete(domain.id);
+                        setShowDeleteDomainDialog(true);
+                      }}
+                      className="text-red-500 hover:text-red-600"
                     >
-                      Xem trang <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
+                </div>
+              ))}
+
+              {/* Add more button */}
+              <Button
+                onClick={() => {
+                  if (!isPro) {
+                    toast.error("Custom domains require a PRO plan");
+                    setShowPricingDialog(true);
+                    return;
+                  }
+                  if (bioPageId) setSelectedBioPageId(bioPageId);
+                  setShowDomainDialog(true);
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                Thêm Domain Khác
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-[#f6f7f5] rounded-lg p-4">
+                <p className="text-[#676b5f] mb-2">Default URL:</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-black bg-white px-3 py-2 rounded border border-[#e0e2d9] flex-1">
+                    linktr.ee/{user.username}
+                  </code>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      setDomainToDelete(domain.id);
-                      setShowDeleteDomainDialog(true);
-                    }}
-                    className="text-red-500 hover:text-red-600"
+                    onClick={() =>
+                      copyToClipboard(`linktr.ee/${user.username}`)
+                    }
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Copy className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-            ))}
 
-            {/* Add more button */}
-            <Button
-              onClick={() => {
-                if (!isPro) {
-                  toast.error("Custom domains require a PRO plan");
-                  setShowPricingDialog(true);
-                  return;
-                }
-                if (bioPageId) setSelectedBioPageId(bioPageId);
-                setShowDomainDialog(true);
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Thêm Domain Khác
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="bg-[#f6f7f5] rounded-lg p-4">
-              <p className="text-[#676b5f] mb-2">Default URL:</p>
-              <div className="flex items-center gap-2">
-                <code className="text-black bg-white px-3 py-2 rounded border border-[#e0e2d9] flex-1">
-                  linktr.ee/{user.username}
-                </code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(`linktr.ee/${user.username}`)}
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button
+                onClick={() => {
+                  if (!isPro) {
+                    toast.error("Custom domains require a PRO plan");
+                    setShowPricingDialog(true);
+                    return;
+                  }
+                  if (bioPageId) setSelectedBioPageId(bioPageId);
+                  setShowDomainDialog(true);
+                }}
+                className="bg-[#8129d9] hover:bg-[#7020c0] text-white"
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                Setup Custom Domain
+              </Button>
             </div>
-
-            <Button
-              onClick={() => {
-                if (!isPro) {
-                  toast.error("Custom domains require a PRO plan");
-                  setShowPricingDialog(true);
-                  return;
-                }
-                if (bioPageId) setSelectedBioPageId(bioPageId);
-                setShowDomainDialog(true);
-              }}
-              className="bg-[#8129d9] hover:bg-[#7020c0] text-white"
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Setup Custom Domain
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Account Settings */}
-      <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Lock className="w-5 h-5 text-[#676b5f]" />
-          <h3 className="text-black">Account Settings</h3>
+          )}
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block mb-2 text-black">Username</label>
-            <input
-              type="text"
-              value={user.username}
-              disabled
-              className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-[#676b5f] cursor-not-allowed"
-            />
-            <p className="text-[#676b5f] mt-1">Username cannot be changed</p>
+        {/* Account Settings */}
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Lock className="w-5 h-5 text-[#676b5f]" />
+            <h3 className="text-black">Account Settings</h3>
           </div>
 
-          <div>
-            <label className="block mb-2 text-black">Email</label>
-            <input
-              type="email"
-              value={email}
-              disabled
-              className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-[#676b5f] cursor-not-allowed"
-            />
-            <p className="text-[#676b5f] mt-1">Email cannot be changed</p>
-          </div>
+          <div className="space-y-6">
+            <div>
+              <label className="block mb-2 text-black">Username</label>
+              <input
+                type="text"
+                value={user.username}
+                disabled
+                className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-[#676b5f] cursor-not-allowed"
+              />
+              <p className="text-[#676b5f] mt-1">Username cannot be changed</p>
+            </div>
 
-          <div>
-            <label className="block mb-2 text-sm text-[#676b5f]">
-              Display Name
-            </label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                setDisplayName(newValue);
-                // Auto-save display name with debounce
-                if (displayNameTimer) {
-                  clearTimeout(displayNameTimer);
-                }
-                const timer = setTimeout(() => {
+            <div>
+              <label className="block mb-2 text-black">Email</label>
+              <input
+                type="email"
+                value={email}
+                disabled
+                className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-[#676b5f] cursor-not-allowed"
+              />
+              <p className="text-[#676b5f] mt-1">Email cannot be changed</p>
+            </div>
+
+            <div>
+              <label className="block mb-2 text-sm text-[#676b5f]">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setDisplayName(newValue);
+                  // Auto-save display name with debounce
+                  if (displayNameTimer) {
+                    clearTimeout(displayNameTimer);
+                  }
+                  const timer = setTimeout(() => {
+                    const settings = {
+                      email,
+                      displayName: newValue,
+                      isProfilePublic,
+                      showAnalytics,
+                      hideVielinkLogo,
+                      emailNotifications,
+                      weeklyReports,
+                    };
+                    localStorage.setItem(
+                      `settings_${user.username}`,
+                      JSON.stringify(settings)
+                    );
+                    onUpdateDisplayName(newValue);
+                  }, 500);
+                  setDisplayNameTimer(timer);
+                }}
+                placeholder="Your Name"
+                className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f]"
+              />
+              <p className="text-xs text-[#676b5f] mt-1">
+                Changes are saved automatically
+              </p>
+            </div>
+
+            <div className="pt-4">
+              <Button
+                onClick={() => setShowPasswordDialog(true)}
+                variant="outline"
+                className="w-full"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Change Password
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy Settings */}
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <h3 className="text-black mb-6">Privacy Settings</h3>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-black">Public Profile</p>
+                <p className="text-[#676b5f]">
+                  Make your profile visible to everyone
+                </p>
+              </div>
+              <Switch
+                checked={isProfilePublic}
+                onCheckedChange={setIsProfilePublic}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-black">Show Analytics</p>
+                <p className="text-[#676b5f]">
+                  Display view count on your profile
+                </p>
+              </div>
+              <Switch
+                checked={showAnalytics}
+                onCheckedChange={setShowAnalytics}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* PRO Settings */}
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <h3 className="text-black mb-6">PRO Settings</h3>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-black">Hide Vielink Logo</p>
+                <p className="text-[#676b5f]">
+                  Remove the Vielink logo from your profile
+                </p>
+              </div>
+              <Switch
+                checked={hideVielinkLogo}
+                onCheckedChange={(checked: boolean) => {
+                  setHideVielinkLogo(checked);
+                  // Auto-save when toggled
                   const settings = {
                     email,
-                    displayName: newValue,
+                    displayName,
                     isProfilePublic,
                     showAnalytics,
-                    hideVielinkLogo,
+                    hideVielinkLogo: checked,
                     emailNotifications,
                     weeklyReports,
                   };
@@ -537,446 +628,361 @@ export default function Settings({
                     `settings_${user.username}`,
                     JSON.stringify(settings)
                   );
-                  onUpdateDisplayName(newValue);
-                }, 500);
-                setDisplayNameTimer(timer);
-              }}
-              placeholder="Your Name"
-              className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f]"
-            />
-            <p className="text-xs text-[#676b5f] mt-1">
-              Changes are saved automatically
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <Button
-              onClick={() => setShowPasswordDialog(true)}
-              variant="outline"
-              className="w-full"
-            >
-              <Lock className="w-4 h-4 mr-2" />
-              Change Password
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Privacy Settings */}
-      <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-        <h3 className="text-black mb-6">Privacy Settings</h3>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-black">Public Profile</p>
-              <p className="text-[#676b5f]">
-                Make your profile visible to everyone
-              </p>
-            </div>
-            <Switch
-              checked={isProfilePublic}
-              onCheckedChange={setIsProfilePublic}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-black">Show Analytics</p>
-              <p className="text-[#676b5f]">
-                Display view count on your profile
-              </p>
-            </div>
-            <Switch
-              checked={showAnalytics}
-              onCheckedChange={setShowAnalytics}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* PRO Settings */}
-      <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-        <h3 className="text-black mb-6">PRO Settings</h3>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-black">Hide Vielink Logo</p>
-              <p className="text-[#676b5f]">
-                Remove the Vielink logo from your profile
-              </p>
-            </div>
-            <Switch
-              checked={hideVielinkLogo}
-              onCheckedChange={(checked: boolean) => {
-                setHideVielinkLogo(checked);
-                // Auto-save when toggled
-                const settings = {
-                  email,
-                  displayName,
-                  isProfilePublic,
-                  showAnalytics,
-                  hideVielinkLogo: checked,
-                  emailNotifications,
-                  weeklyReports,
-                };
-                localStorage.setItem(
-                  `settings_${user.username}`,
-                  JSON.stringify(settings)
-                );
-                if (onSettingsChange) {
-                  onSettingsChange(settings);
-                }
-                toast.success(
-                  checked ? "VieLink logo hidden" : "VieLink logo shown"
-                );
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Notification Settings */}
-      <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Bell className="w-5 h-5 text-[#676b5f]" />
-          <h3 className="text-black">Notifications</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-black">Email Notifications</p>
-              <p className="text-[#676b5f]">
-                Receive email updates about your account
-              </p>
-            </div>
-            <Switch
-              checked={emailNotifications}
-              onCheckedChange={setEmailNotifications}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-black">Weekly Reports</p>
-              <p className="text-[#676b5f]">
-                Get weekly analytics reports via email
-              </p>
-            </div>
-            <Switch
-              checked={weeklyReports}
-              onCheckedChange={setWeeklyReports}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Save Button */}
-      <Button
-        onClick={handleSaveSettings}
-        className="w-full bg-[#8129d9] hover:bg-[#7020c0] text-white"
-      >
-        Save All Settings
-      </Button>
-
-      {/* Danger Zone */}
-      <div className="bg-white rounded-lg border border-red-200 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Trash2 className="w-5 h-5 text-red-500" />
-          <h3 className="text-red-500">Danger Zone</h3>
-        </div>
-
-        <p className="text-[#676b5f] mb-4">
-          Once you delete your account, there is no going back. Please be
-          certain.
-        </p>
-
-        <Button
-          variant="outline"
-          onClick={() => setShowDeleteDialog(true)}
-          className="border-red-500 text-red-500 hover:bg-red-50"
-        >
-          Delete Account
-        </Button>
-      </div>
-
-      {/* Custom Domain Setup Dialog */}
-      <Dialog open={showDomainDialog} onOpenChange={setShowDomainDialog}>
-        <DialogContent className="max-w-lg max-h-[85vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Globe className="w-6 h-6 text-[#8129d9]" />
-              Thêm Custom Domain
-            </DialogTitle>
-            <DialogDescription className="text-base">
-              Kết nối domain của bạn với bio page để visitors có thể truy cập
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Scrollable content */}
-          <div className="overflow-y-auto max-h-[calc(85vh-200px)] space-y-5 pr-2">
-            {/* Step 1: Enter Domain */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#8129d9] to-[#d946ef] text-white rounded-lg flex items-center justify-center font-semibold shadow-md">
-                  1
-                </div>
-                <h4 className="text-black font-medium text-lg">
-                  Nhập domain của bạn
-                </h4>
-              </div>
-              <input
-                type="text"
-                value={customDomain}
-                onChange={(e) => setCustomDomain(e.target.value)}
-                placeholder="abc123.trycloudflare.com"
-                className="w-full px-4 py-3 bg-white rounded-lg text-black placeholder:text-[#9ca3af] border-2 border-[#e0e2d9] focus:border-[#8129d9] focus:outline-none transition-colors"
+                  if (onSettingsChange) {
+                    onSettingsChange(settings);
+                  }
+                  toast.success(
+                    checked ? "VieLink logo hidden" : "VieLink logo shown"
+                  );
+                }}
               />
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-3">
-                <p className="text-[#676b5f] text-sm">
-                  💡 Dùng <strong>ngrok</strong> hoặc{" "}
-                  <strong>Cloudflare Tunnel</strong> để expose localhost ra
-                  internet
+            </div>
+          </div>
+        </div>
+
+        {/* Notification Settings */}
+        <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Bell className="w-5 h-5 text-[#676b5f]" />
+            <h3 className="text-black">Notifications</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-black">Email Notifications</p>
+                <p className="text-[#676b5f]">
+                  Receive email updates about your account
+                </p>
+              </div>
+              <Switch
+                checked={emailNotifications}
+                onCheckedChange={setEmailNotifications}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-black">Weekly Reports</p>
+                <p className="text-[#676b5f]">
+                  Get weekly analytics reports via email
+                </p>
+              </div>
+              <Switch
+                checked={weeklyReports}
+                onCheckedChange={setWeeklyReports}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <Button
+          onClick={handleSaveSettings}
+          className="w-full bg-[#8129d9] hover:bg-[#7020c0] text-white"
+        >
+          Save All Settings
+        </Button>
+
+        {/* Danger Zone */}
+        <div className="bg-white rounded-lg border border-red-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Trash2 className="w-5 h-5 text-red-500" />
+            <h3 className="text-red-500">Danger Zone</h3>
+          </div>
+
+          <p className="text-[#676b5f] mb-4">
+            Once you delete your account, there is no going back. Please be
+            certain.
+          </p>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteDialog(true)}
+            className="border-red-500 text-red-500 hover:bg-red-50"
+          >
+            Delete Account
+          </Button>
+        </div>
+
+        {/* Custom Domain Setup Dialog */}
+        <Dialog open={showDomainDialog} onOpenChange={setShowDomainDialog}>
+          <DialogContent className="max-w-lg max-h-[85vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Globe className="w-6 h-6 text-[#8129d9]" />
+                Thêm Custom Domain
+              </DialogTitle>
+              <DialogDescription className="text-base">
+                Kết nối domain của bạn với bio page để visitors có thể truy cập
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Scrollable content */}
+            <div className="overflow-y-auto max-h-[calc(85vh-200px)] space-y-5 pr-2">
+              {/* Step 1: Enter Domain */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-[#8129d9] to-[#d946ef] text-white rounded-lg flex items-center justify-center font-semibold shadow-md">
+                    1
+                  </div>
+                  <h4 className="text-black font-medium text-lg">
+                    Nhập domain của bạn
+                  </h4>
+                </div>
+                <input
+                  type="text"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                  placeholder="abc123.trycloudflare.com"
+                  className="w-full px-4 py-3 bg-white rounded-lg text-black placeholder:text-[#9ca3af] border-2 border-[#e0e2d9] focus:border-[#8129d9] focus:outline-none transition-colors"
+                />
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-3">
+                  <p className="text-[#676b5f] text-sm">
+                    💡 Dùng <strong>ngrok</strong> hoặc{" "}
+                    <strong>Cloudflare Tunnel</strong> để expose localhost ra
+                    internet
+                  </p>
+                </div>
+              </div>
+
+              {/* Tutorial link */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
+                    <ExternalLink className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="text-black font-medium mb-1">
+                      Chưa có tunnel?
+                    </h5>
+                    <p className="text-[#676b5f] text-sm mb-3">
+                      Xem hướng dẫn cách setup tunnel để expose localhost ra
+                      internet
+                    </p>
+                    <a
+                      href="https://github.com/cloudflare/cloudflared#installation"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[#8129d9] hover:text-[#7020c0] font-medium text-sm transition-colors"
+                    >
+                      Hướng dẫn Cloudflare Tunnel{" "}
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <span className="mx-2 text-[#676b5f]">•</span>
+                    <a
+                      href="https://ngrok.com/docs/getting-started"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[#8129d9] hover:text-[#7020c0] font-medium text-sm transition-colors"
+                    >
+                      Hướng dẫn ngrok <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="border-t pt-4 mt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDomainDialog(false);
+                  setCustomDomain("");
+                  setSelectedBioPageId("");
+                }}
+                className="px-6"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleVerifyDomain}
+                disabled={isVerifying || !customDomain}
+                className="bg-gradient-to-r from-[#8129d9] to-[#d946ef] hover:opacity-90 text-white px-8 shadow-lg"
+              >
+                {isVerifying ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Đang kết nối...
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-4 h-4 mr-2" />
+                    Kết nối Domain
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Domain Confirmation Dialog */}
+        <Dialog
+          open={showDeleteDomainDialog}
+          onOpenChange={setShowDeleteDomainDialog}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-red-500 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                Xóa Custom Domain
+              </DialogTitle>
+              <DialogDescription>
+                Bạn có chắc muốn xóa domain này? Visitors sẽ không thể truy cập
+                bio page qua domain nữa.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="bg-red-50 border border-red-200 rounded p-4">
+              <p className="text-red-800 text-sm">
+                Domain sẽ bị gỡ khỏi hệ thống và không còn trỏ đến bio page của
+                bạn.
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteDomainDialog(false);
+                  setDomainToDelete(null);
+                }}
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={() => {
+                  if (domainToDelete) {
+                    handleRemoveDomain(domainToDelete);
+                  }
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Xóa Domain
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Account Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-red-500">Delete Account</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete your account? This action cannot
+                be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="bg-red-50 border border-red-200 rounded p-4">
+              <p className="text-red-800">
+                All of your data will be permanently deleted, including:
+              </p>
+              <ul className="list-disc list-inside mt-2 text-red-700 space-y-1">
+                <li>Your profile and bio</li>
+                <li>All your links</li>
+                <li>Analytics data</li>
+                <li>Custom domain settings</li>
+              </ul>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteAccount}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Yes, Delete My Account
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Password Dialog */}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                Change Password
+              </DialogTitle>
+              <DialogDescription>
+                We'll send you an email with a link to reset your password
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="bg-[#f6f7f5] p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-[#8129d9] mt-0.5" />
+                  <div>
+                    <p className="text-black font-medium mb-1">
+                      Reset via Email
+                    </p>
+                    <p className="text-[#676b5f] text-sm">
+                      A password reset link will be sent to{" "}
+                      <strong>{user.email}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-blue-800 text-sm">
+                  After clicking the link in your email, you'll be able to set a
+                  new password.
                 </p>
               </div>
             </div>
 
-            {/* Tutorial link */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
-                  <ExternalLink className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h5 className="text-black font-medium mb-1">
-                    Chưa có tunnel?
-                  </h5>
-                  <p className="text-[#676b5f] text-sm mb-3">
-                    Xem hướng dẫn cách setup tunnel để expose localhost ra
-                    internet
-                  </p>
-                  <a
-                    href="https://github.com/cloudflare/cloudflared#installation"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[#8129d9] hover:text-[#7020c0] font-medium text-sm transition-colors"
-                  >
-                    Hướng dẫn Cloudflare Tunnel{" "}
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                  <span className="mx-2 text-[#676b5f]">•</span>
-                  <a
-                    href="https://ngrok.com/docs/getting-started"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[#8129d9] hover:text-[#7020c0] font-medium text-sm transition-colors"
-                  >
-                    Hướng dẫn ngrok <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowPasswordDialog(false)}
+                disabled={isSendingEmail}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={isSendingEmail}
+                className="bg-[#8129d9] hover:bg-[#7020c0]"
+              >
+                {isSendingEmail ? "Sending..." : "Send Reset Email"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-          <DialogFooter className="border-t pt-4 mt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDomainDialog(false);
-                setCustomDomain("");
-                setSelectedBioPageId("");
+        {/* Pricing Dialog */}
+        <Dialog open={showPricingDialog} onOpenChange={setShowPricingDialog}>
+          <DialogContent
+            className="max-w-[90vw] sm:max-w-[1400px] p-0 bg-transparent border-0 flex items-center justify-center"
+            aria-describedby="pricing-description"
+          >
+            <DialogHeader className="sr-only">
+              <DialogTitle>Select Your Plan</DialogTitle>
+              <DialogDescription id="pricing-description">
+                Choose the perfect pricing plan for your needs
+              </DialogDescription>
+            </DialogHeader>
+            <Pricing
+              userId={userId || internalUserId || undefined}
+              onSelectPlan={(plan) => {
+                toast.success(`Selected ${plan} plan!`);
+                setShowPricingDialog(false);
               }}
-              className="px-6"
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={handleVerifyDomain}
-              disabled={isVerifying || !customDomain}
-              className="bg-gradient-to-r from-[#8129d9] to-[#d946ef] hover:opacity-90 text-white px-8 shadow-lg"
-            >
-              {isVerifying ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Đang kết nối...
-                </>
-              ) : (
-                <>
-                  <Globe className="w-4 h-4 mr-2" />
-                  Kết nối Domain
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Domain Confirmation Dialog */}
-      <Dialog
-        open={showDeleteDomainDialog}
-        onOpenChange={setShowDeleteDomainDialog}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-500 flex items-center gap-2">
-              <Trash2 className="w-5 h-5" />
-              Xóa Custom Domain
-            </DialogTitle>
-            <DialogDescription>
-              Bạn có chắc muốn xóa domain này? Visitors sẽ không thể truy cập
-              bio page qua domain nữa.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="bg-red-50 border border-red-200 rounded p-4">
-            <p className="text-red-800 text-sm">
-              Domain sẽ bị gỡ khỏi hệ thống và không còn trỏ đến bio page của
-              bạn.
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteDomainDialog(false);
-                setDomainToDelete(null);
-              }}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={() => {
-                if (domainToDelete) {
-                  handleRemoveDomain(domainToDelete);
-                }
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white"
-            >
-              Xóa Domain
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Account Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-500">Delete Account</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete your account? This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="bg-red-50 border border-red-200 rounded p-4">
-            <p className="text-red-800">
-              All of your data will be permanently deleted, including:
-            </p>
-            <ul className="list-disc list-inside mt-2 text-red-700 space-y-1">
-              <li>Your profile and bio</li>
-              <li>All your links</li>
-              <li>Analytics data</li>
-              <li>Custom domain settings</li>
-            </ul>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteAccount}
-              className="bg-red-500 hover:bg-red-600 text-white"
-            >
-              Yes, Delete My Account
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Change Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              Change Password
-            </DialogTitle>
-            <DialogDescription>
-              We'll send you an email with a link to reset your password
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="bg-[#f6f7f5] p-4 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-[#8129d9] mt-0.5" />
-                <div>
-                  <p className="text-black font-medium mb-1">Reset via Email</p>
-                  <p className="text-[#676b5f] text-sm">
-                    A password reset link will be sent to{" "}
-                    <strong>{user.email}</strong>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-blue-800 text-sm">
-                After clicking the link in your email, you'll be able to set a
-                new password.
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPasswordDialog(false)}
-              disabled={isSendingEmail}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleChangePassword}
-              disabled={isSendingEmail}
-              className="bg-[#8129d9] hover:bg-[#7020c0]"
-            >
-              {isSendingEmail ? "Sending..." : "Send Reset Email"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Pricing Dialog */}
-      <Dialog open={showPricingDialog} onOpenChange={setShowPricingDialog}>
-        <DialogContent
-          className="max-w-[90vw] sm:max-w-[1400px] p-0 bg-transparent border-0 flex items-center justify-center"
-          aria-describedby="pricing-description"
-        >
-          <DialogHeader className="sr-only">
-            <DialogTitle>Select Your Plan</DialogTitle>
-            <DialogDescription id="pricing-description">
-              Choose the perfect pricing plan for your needs
-            </DialogDescription>
-          </DialogHeader>
-          <Pricing
-            userId={userId || internalUserId || undefined}
-            onSelectPlan={(plan) => {
-              toast.success(`Selected ${plan} plan!`);
-              setShowPricingDialog(false);
-            }}
-            onClose={() => setShowPricingDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
+              onClose={() => setShowPricingDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
