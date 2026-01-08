@@ -34,6 +34,8 @@ export function App() {
     checkUserPages,
   } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const domainType = getDomainType();
 
   // Handle login with navigation
   const handleLogin = useCallback(
@@ -179,10 +181,8 @@ export function App() {
     );
   }
 
-  // DOMAIN-BASED ROUTING LOGIC
+  // DOMAIN-BASED ROUTING LOGIC (computed earlier to keep Hook ordering stable)
   // Custom domains should ONLY show bio pages, not platform features
-  const domainType = getDomainType();
-  const location = useLocation();
 
   console.log("[App] Domain routing:", {
     domainType,

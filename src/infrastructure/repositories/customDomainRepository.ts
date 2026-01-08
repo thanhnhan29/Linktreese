@@ -91,7 +91,7 @@ class CustomDomainRepository {
   }
 
   /**
-   * Get domain by bio page ID
+   * Get domain by bio page ID (active only)
    */
   async getDomainByBioPageId(bioPageId: string): Promise<CustomDomain | null> {
     const q = query(
@@ -107,6 +107,19 @@ class CustomDomainRepository {
     }
 
     return this.mapToModel(snapshot.docs[0]);
+  }
+
+  /**
+   * Get ALL domains by bio page ID (all statuses)
+   */
+  async getDomainsByBioPageId(bioPageId: string): Promise<CustomDomain[]> {
+    const q = query(
+      collection(db, this.collectionName),
+      where("bioPageId", "==", bioPageId)
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => this.mapToModel(doc));
   }
 
   /**

@@ -4,9 +4,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { User, LogOut, Copy, CheckCheck, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { writeBatch, doc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/infrastructure/firebase";
-import {
+import { writeBatch, doc, serverTimestamp, onSnapshot, setDoc } from "firebase/firestore";
+import { db } from "@/infrastructure/firebase";import ProBadge from "@/components/ProBadge";import {
   Dialog,
   DialogContent,
   DialogTitle,
@@ -47,9 +46,46 @@ export default function Dashboard({
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
+
+  // Listen to user doc for PRO status
+  useEffect(() => {
+    if (!userId) {
+      console.log("[Dashboard] No userId provided");
+      return;
+    }
+
+    console.log("[Dashboard] Listening user doc:", userId);
+    const userDocRef = doc(db, "users", userId);
+    const unsubscribe = onSnapshot(userDocRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setIsPro(data.proPurchase || false);
+        console.log("[Dashboard] User PRO status:", data.proPurchase);
+      } else {
+        console.log("[Dashboard] User doc missing, creating...");
+        try {
+          await setDoc(userDocRef, {
+            email: userEmail,
+            proPurchase: false,
+            subscriptionPlan: "free",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          console.log("[Dashboard] User doc created");
+        } catch (error) {
+          console.error("[Dashboard] Failed to create user doc:", error);
+        }
+      }
+    }, (err) => {
+      console.error('[Dashboard] Error listening user doc:', err);
+    });
+
+    return () => unsubscribe();
+  }, [userId, userEmail]);
 
   // Use the new hooks
   const {
@@ -271,6 +307,7 @@ export default function Dashboard({
               <span className="text-[#676b5f] text-sm">
                 @{currentBioPageUsername}
               </span>
+              <ProBadge isPro={isPro} size="sm" />
             </div>
             <button
               className="bg-white border border-[#e0e2d9] text-black px-4 py-2 rounded-full hover:bg-[#f6f7f5]"
@@ -422,6 +459,8 @@ export default function Dashboard({
             {currentTab === "Settings" && (
               <Settings
                 user={{ username: currentBioPageUsername, email: userEmail }}
+                userId={userId}
+                bioPageId={bioPage?.id}
                 onLogout={onLogout}
                 onUpdateDisplayName={updateDisplayName}
                 onSettingsChange={handleSettingsChange}

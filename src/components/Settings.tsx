@@ -3,7 +3,7 @@ import { deleteUser } from "firebase/auth";
 import { auth } from "@/infrastructure/firebase";
 import { authService } from "@/features/auth/services/authService";
 import { db } from "@/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, onSnapshot } from "firebase/firestore";
 import {
   Globe,
   Lock,
@@ -64,7 +64,7 @@ export default function Settings({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [domainToDelete, setDomainToDelete] = useState<string | null>(null);
 
-  // Custom Domain hook - get all domains for user
+  // Custom Domain hook - get domains for THIS bio page only
   const {
     domains: userDomains,
     createDomain,
@@ -72,7 +72,8 @@ export default function Settings({
     deleteDomain,
   } = useCustomDomain({
     userId: userId || internalUserId || undefined,
-    enabled: !!(userId || internalUserId),
+    bioPageId: bioPageId || internalBioPageId || undefined,
+    enabled: !!(bioPageId || internalBioPageId),
   });
 
   // Account settings
@@ -94,10 +95,27 @@ export default function Settings({
 
   // PRO settings
   const [hideVielinkLogo, setHideVielinkLogo] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyReports, setWeeklyReports] = useState(false);
+
+  // Listen to user doc for PRO status
+  useEffect(() => {
+    const effectiveUserId = userId || internalUserId;
+    if (!effectiveUserId) return;
+
+    const userDocRef = doc(db, "users", effectiveUserId);
+    const unsubscribe = onSnapshot(userDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setIsPro(data.proPurchase || false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [userId, internalUserId]);
 
   useEffect(() => {
     // Always sync selectedBioPageId with bioPageId from props
@@ -402,6 +420,11 @@ export default function Settings({
             {/* Add more button */}
             <Button
               onClick={() => {
+                if (!isPro) {
+                  toast.error("Custom domains require a PRO plan");
+                  setShowPricingDialog(true);
+                  return;
+                }
                 if (bioPageId) setSelectedBioPageId(bioPageId);
                 setShowDomainDialog(true);
               }}
@@ -432,6 +455,11 @@ export default function Settings({
 
             <Button
               onClick={() => {
+                if (!isPro) {
+                  toast.error("Custom domains require a PRO plan");
+                  setShowPricingDialog(true);
+                  return;
+                }
                 if (bioPageId) setSelectedBioPageId(bioPageId);
                 setShowDomainDialog(true);
               }}
@@ -923,7 +951,7 @@ export default function Settings({
       {/* Pricing Dialog */}
       <Dialog open={showPricingDialog} onOpenChange={setShowPricingDialog}>
         <DialogContent
-          className="max-w-[1400px] p-0 bg-transparent border-0"
+          className="max-w-[90vw] sm:max-w-[1400px] p-0 bg-transparent border-0 flex items-center justify-center"
           aria-describedby="pricing-description"
         >
           <DialogHeader className="sr-only">
@@ -933,10 +961,12 @@ export default function Settings({
             </DialogDescription>
           </DialogHeader>
           <Pricing
+            userId={userId || internalUserId || undefined}
             onSelectPlan={(plan) => {
               toast.success(`Selected ${plan} plan!`);
               setShowPricingDialog(false);
             }}
+            onClose={() => setShowPricingDialog(false)}
           />
         </DialogContent>
       </Dialog>

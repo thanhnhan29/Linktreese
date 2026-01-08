@@ -160,6 +160,13 @@ class CustomDomainService {
   }
 
   /**
+   * Get ALL domains for a bio page (all statuses)
+   */
+  async getBioPageDomains(bioPageId: string): Promise<CustomDomain[]> {
+    return await customDomainRepository.getDomainsByBioPageId(bioPageId);
+  }
+
+  /**
    * Get bio page by custom domain
    */
   async getBioPageByDomain(domain: string): Promise<string | null> {

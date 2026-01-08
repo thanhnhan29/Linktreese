@@ -40,24 +40,30 @@ export function useCustomDomain({
   const [error, setError] = useState<Error | null>(null);
 
   const fetchDomains = useCallback(async () => {
-    if (!enabled || !userId) return;
+    if (!enabled) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const userDomains = await customDomainService.getUserDomains(userId);
-      setDomains(userDomains);
+      let userDomains: CustomDomain[] = [];
 
-      // If bioPageId provided, find domain for that page
+      // Priority 1: If bioPageId is provided, get ALL domains for that bio page
       if (bioPageId) {
-        const pageDomain = await customDomainService.getBioPageDomain(
-          bioPageId
-        );
-        setDomain(pageDomain);
-      } else if (userDomains.length > 0) {
-        setDomain(userDomains[0]); // Default to first domain
+        userDomains = await customDomainService.getBioPageDomains(bioPageId);
+        // Set the active domain if exists
+        const activeDomain = userDomains.find((d) => d.status === "active");
+        setDomain(activeDomain || null);
       }
+      // Priority 2: Fall back to getting all user domains (for backwards compatibility)
+      else if (userId) {
+        userDomains = await customDomainService.getUserDomains(userId);
+        if (userDomains.length > 0) {
+          setDomain(userDomains[0]); // Default to first domain
+        }
+      }
+
+      setDomains(userDomains);
     } catch (err: any) {
       setError(err);
       console.error("Error fetching domains:", err);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { User, LogOut, Copy, CheckCheck, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import ProBadge from "./ProBadge";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   orderBy,
   serverTimestamp,
   writeBatch,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -83,6 +85,7 @@ export default function Dashboard({
   const [hideVielinkLogo, setHideVielinkLogo] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   // Get current URL base (localhost or production)
   const getShareUrl = () => {
@@ -106,6 +109,43 @@ export default function Dashboard({
       key: currentBioPageUsername,
       imageType: "background",
     });
+
+  // --- 0. LẤY PRO STATUS TỪ USER (AUTO-CREATE IF MISSING) ---
+  useEffect(() => {
+    if (!userId) {
+      console.log("[Dashboard] No userId provided to load PRO status");
+      return;
+    }
+
+    console.log("[Dashboard] Listening user doc:", userId);
+    const userDocRef = doc(db, "users", userId);
+    const unsubscribe = onSnapshot(userDocRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setIsPro(data.proPurchase || false);
+        console.log("[Dashboard] User PRO status:", data.proPurchase);
+      } else {
+        console.log("[Dashboard] User doc does not exist, creating default doc...");
+        // Auto-create user doc with default values
+        try {
+          await setDoc(userDocRef, {
+            email: userEmail,
+            proPurchase: false,
+            subscriptionPlan: "free",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          console.log("[Dashboard] User doc created successfully");
+        } catch (error) {
+          console.error("[Dashboard] Failed to create user doc:", error);
+        }
+      }
+    }, (err) => {
+      console.error('[Dashboard] Error listening user doc:', err);
+    });
+
+    return () => unsubscribe();
+  }, [userId, userEmail]);
 
   // --- 1. LẤY DOC ID CỦA PAGE HIỆN TẠI ---
   useEffect(() => {
@@ -754,6 +794,7 @@ export default function Dashboard({
               <span className="text-[#676b5f] text-sm">
                 @{currentBioPageUsername}
               </span>
+              <ProBadge isPro={isPro} size="sm" />
             </div>
             <button
               className="bg-white border border-[#e0e2d9] text-black px-4 py-2 rounded-full hover:bg-[#f6f7f5]"

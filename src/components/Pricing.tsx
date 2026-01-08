@@ -1,14 +1,56 @@
 import { useState } from 'react';
 import { Resizable } from 're-resizable';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { toast } from 'sonner';
 import svgPaths from '../imports/svg-xs4guo0nux';
 
 interface PricingProps {
+  userId?: string;
   onSelectPlan?: (plan: 'free' | 'starter' | 'pro' | 'premium') => void;
+  onClose?: () => void;
 }
 
-export default function Pricing({ onSelectPlan }: PricingProps) {
+export default function Pricing({ userId, onSelectPlan, onClose }: PricingProps) {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annually'>('monthly');
   const [size, setSize] = useState({ width: 1200, height: 600 });
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const handleUpgradeToPro = async (plan: 'free' | 'starter' | 'pro' | 'premium') => {
+    // Mock payment - bỏ qua payment gateway, set PRO luôn
+    if (!userId) {
+      toast.error('User ID not found. Please login again.');
+      return;
+    }
+
+    setIsUpgrading(true);
+
+    try {
+      // Determine if this plan should get PRO features
+      const isPro = plan === 'pro' || plan === 'premium' || plan === 'starter';
+
+      // Update Firestore user document (create if doesn't exist)
+      const userRef = doc(db, 'users', userId);
+      await setDoc(userRef, {
+        proPurchase: isPro,
+        subscriptionPlan: plan,
+        upgradedAt: new Date().toISOString(),
+      }, { merge: true }); // merge: true creates doc if missing
+
+      toast.success(`Successfully upgraded to ${plan.toUpperCase()}!`);
+      
+      // Call callback if provided
+      onSelectPlan?.(plan);
+      
+      // Close dialog if callback provided
+      onClose?.();
+    } catch (error) {
+      console.error('Error upgrading plan:', error);
+      toast.error('Failed to upgrade. Please try again.');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   // Calculate scale based on size
   const baseWidth = 1200;
@@ -109,10 +151,11 @@ export default function Pricing({ onSelectPlan }: PricingProps) {
                 The VIP support plan for businesses ready to monetize and sell on a larger scale.
               </p>
               <button
-                onClick={() => onSelectPlan?.('premium')}
-                className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all"
+                onClick={() => handleUpgradeToPro('premium')}
+                disabled={isUpgrading}
+                className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all disabled:opacity-50"
               >
-                Get Premium
+                {isUpgrading ? 'Processing...' : 'Get Premium'}
               </button>
             </div>
           </div>
@@ -136,10 +179,11 @@ export default function Pricing({ onSelectPlan }: PricingProps) {
                 Grow, learn about and own your following forever with a branded Linktree.
               </p>
               <button
-                onClick={() => onSelectPlan?.('pro')}
-                className="w-full bg-[#FF5E0E] text-white py-2 rounded-full text-sm font-semibold hover:bg-[#E54D00] transition-all mb-3"
+                onClick={() => handleUpgradeToPro('pro')}
+                disabled={isUpgrading}
+                className="w-full bg-[#FF5E0E] text-white py-2 rounded-full text-sm font-semibold hover:bg-[#E54D00] transition-all mb-3 disabled:opacity-50"
               >
-                Get Pro
+                {isUpgrading ? 'Processing...' : 'Get Pro'}
               </button>
               <div className="flex items-center gap-1.5 text-[#70764D] text-[10px]">
                 <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 16 14">
@@ -169,10 +213,11 @@ export default function Pricing({ onSelectPlan }: PricingProps) {
                 More customization and control for creators ready to drive more traffic to and through their Linktree.
               </p>
               <button
-                onClick={() => onSelectPlan?.('starter')}
-                className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all"
+                onClick={() => handleUpgradeToPro('starter')}
+                disabled={isUpgrading}
+                className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all disabled:opacity-50"
               >
-                Get Starter
+                {isUpgrading ? 'Processing...' : 'Get Starter'}
               </button>
             </div>
           </div>
@@ -191,10 +236,11 @@ export default function Pricing({ onSelectPlan }: PricingProps) {
                 Unlimited links and a customizable Linktree to connect your community to everything you are.
               </p>
               <button
-                onClick={() => onSelectPlan?.('free')}
-                className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all"
+                onClick={() => handleUpgradeToPro('free')}
+                disabled={isUpgrading}
+                className="w-full bg-white border-2 border-[#502274] text-[#502274] py-2 rounded-full text-sm font-semibold hover:bg-[#502274] hover:text-white transition-all disabled:opacity-50"
               >
-                Join for free
+                {isUpgrading ? 'Processing...' : 'Join for free'}
               </button>
             </div>
           </div>
