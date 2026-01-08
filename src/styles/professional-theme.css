@@ -1,0 +1,157 @@
+﻿/* Professional Dashboard Styles - Linktree Inspired */
+
+/* Design Tokens */
+:root {
+  --color-primary: #8129d9;
+  --color-primary-hover: #6f23b8;
+  --color-primary-light: #f3e8ff;
+  --color-success: #43e660;
+  --color-success-hover: #36c24f;
+  --color-background: #f6f7f9;
+  --color-card: #ffffff;
+  --color-border: #e6e9ed;
+  --color-border-light: #f0f2f5;
+  --color-text-primary: #20262e;
+  --color-text-secondary: #676b5f;
+  --color-text-muted: #9ca3af;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+/* Card Styles */
+.pro-card {
+  @apply bg-white rounded-xl border border-[#e6e9ed] p-6 shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+.pro-card-compact {
+  @apply bg-white rounded-lg border border-[#e6e9ed] p-4 shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+/* Button Styles */
+.pro-button-primary {
+  @apply bg-[#8129d9] hover:bg-[#6f23b8] text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md;
+}
+
+.pro-button-secondary {
+  @apply bg-white hover:bg-gray-50 text-[#20262e] px-4 py-2.5 rounded-lg font-medium border border-[#e6e9ed] transition-all duration-200;
+}
+
+.pro-button-ghost {
+  @apply hover:bg-gray-50 text-[#676b5f] hover:text-[#20262e] px-3 py-2 rounded-lg transition-all duration-200;
+}
+
+/* Tab Navigation */
+.pro-tab {
+  @apply relative px-4 py-2.5 text-sm font-medium text-[#676b5f] hover:text-[#20262e] transition-colors duration-200 cursor-pointer;
+}
+
+.pro-tab-active {
+  @apply text-[#8129d9] font-semibold;
+}
+
+.pro-tab-active::after {
+  content: "";
+  @apply absolute bottom-0 left-0 right-0 h-0.5 bg-[#8129d9] rounded-full;
+}
+
+/* Link/Block Item */
+.pro-item {
+  @apply bg-white rounded-lg border border-[#e6e9ed] p-4 hover:border-[#8129d9] hover:shadow-md transition-all duration-200 cursor-pointer group;
+}
+
+.pro-item-active {
+  @apply border-[#8129d9] bg-[#f9f5ff];
+}
+
+.pro-item-inactive {
+  @apply opacity-60 hover:opacity-80;
+}
+
+/* Drag Handle */
+.pro-drag-handle {
+  @apply cursor-move text-[#9ca3af] hover:text-[#676b5f] transition-colors p-1 rounded hover:bg-gray-100;
+}
+
+/* Input Styles */
+.pro-input {
+  @apply w-full px-4 py-2.5 bg-white border border-[#e6e9ed] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#8129d9] focus:border-transparent transition-all duration-200;
+}
+
+.pro-input-error {
+  @apply border-red-300 focus:ring-red-500;
+}
+
+/* Stat Card */
+.pro-stat-card {
+  @apply bg-gradient-to-br from-white to-gray-50 rounded-xl border border-[#e6e9ed] p-6 hover:shadow-lg transition-all duration-300;
+}
+
+/* Badge */
+.pro-badge {
+  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+}
+
+.pro-badge-pro {
+  @apply bg-gradient-to-r from-[#8129d9] to-[#d946ef] text-white;
+}
+
+.pro-badge-free {
+  @apply bg-gray-100 text-gray-600;
+}
+
+.pro-badge-success {
+  @apply bg-green-100 text-green-700;
+}
+
+/* Section Header */
+.pro-section-header {
+  @apply flex items-center gap-3 mb-6;
+}
+
+.pro-section-title {
+  @apply text-xl font-semibold text-[#20262e];
+}
+
+.pro-section-subtitle {
+  @apply text-sm text-[#676b5f] mt-1;
+}
+
+/* Empty State */
+.pro-empty-state {
+  @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+}
+
+.pro-empty-icon {
+  @apply w-16 h-16 text-[#9ca3af] mb-4;
+}
+
+.pro-empty-title {
+  @apply text-lg font-semibold text-[#20262e] mb-2;
+}
+
+.pro-empty-description {
+  @apply text-sm text-[#676b5f] max-w-md;
+}
+
+/* Loading Spinner */
+.pro-spinner {
+  @apply w-8 h-8 border-4 border-[#e6e9ed] border-t-[#8129d9] rounded-full animate-spin;
+}
+
+/* Hover Effects */
+.pro-hover-lift {
+  @apply transition-transform duration-200 hover:-translate-y-0.5;
+}
+
+.pro-hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Smooth Transitions */
+.pro-transition {
+  @apply transition-all duration-200 ease-in-out;
+}

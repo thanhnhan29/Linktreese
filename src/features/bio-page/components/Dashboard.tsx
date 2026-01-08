@@ -2,7 +2,7 @@
 // Main dashboard component using the new architecture
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { User, LogOut, Copy, CheckCheck, Download } from "lucide-react";
+import { User, LogOut, Copy, CheckCheck, Download, Link as LinkIcon, Palette, BarChart3, Settings as SettingsIcon } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   writeBatch,
@@ -349,39 +349,56 @@ export default function Dashboard({
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f7f5]">
+    <div className="min-h-screen bg-gradient-to-br from-[#dff8ff] via-[#cceeff] to-[#b3e6ff] relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute bg-[#cceeff] opacity-70 blur-3xl w-64 h-64 rounded-full -top-16 -left-10" />
+        <div className="absolute bg-[#b3e6ff] opacity-60 blur-3xl w-72 h-72 rounded-full top-20 right-8" />
+        <div className="absolute bg-[#e0f7ff] opacity-80 blur-3xl w-52 h-52 rounded-full bottom-24 left-16" />
+      </div>
       {/* Header */}
-      <header className="bg-white border-b border-[#e0e2d9]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h2 className="text-black font-bold">Vielink</h2>
+      <header className="bg-white/80 backdrop-blur-md border-b border-[#e6e9ed] sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-12">
+            <h2 className="text-[#8129d9] font-bold text-xl">Vielink</h2>
 
-            <nav className="flex gap-6">
-              {["Links", "Appearance", "Analytics", "Settings"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setCurrentTab(tab as any)}
-                  className={`capitalize ${
-                    currentTab === tab
-                      ? "text-black font-medium"
-                      : "text-[#676b5f] hover:text-[#8129d9]"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <nav className="flex gap-1">
+              {[
+                { name: "Links", icon: LinkIcon },
+                { name: "Appearance", icon: Palette },
+                { name: "Analytics", icon: BarChart3 },
+                { name: "Settings", icon: SettingsIcon }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.name}
+                    onClick={() => setCurrentTab(tab.name as any)}
+                    className={`relative px-4 py-2.5 text-sm font-medium transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                      currentTab === tab.name
+                        ? "text-[#8129d9] bg-[#f9f5ff] border-l-4 border-[#8129d9]"
+                        : "text-[#676b5f] hover:text-[#20262e] hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${currentTab === tab.name ? "text-[#8129d9]" : "text-[#676b5f]"}`} />
+                    {tab.name}
+                    {currentTab === tab.name && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-[#8129d9] rounded-full"></span>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[#676b5f] text-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+              <span className="text-[#676b5f] text-sm font-medium">
                 @{currentBioPageUsername}
               </span>
               <ProBadge isPro={isPro} size="sm" />
             </div>
             <button
-              className="bg-white border border-[#e0e2d9] text-black px-4 py-2 rounded-full hover:bg-[#f6f7f5]"
+              className="bg-[#8129d9] hover:bg-[#6f23b8] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
               onClick={() => setShowShareDialog(true)}
             >
               Share
@@ -391,7 +408,7 @@ export default function Dashboard({
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowAccountMenu(!showAccountMenu)}
-                className="w-10 h-10 bg-[#e0e2d9] rounded-full flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-[#8129d9] transition-all"
+                className="w-10 h-10 bg-gradient-to-br from-[#8129d9] to-[#d946ef] rounded-full flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-[#8129d9] hover:ring-offset-2 transition-all"
               >
                 {bioPage.avatarUrl ? (
                   <img
@@ -482,7 +499,7 @@ export default function Dashboard({
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 relative z-10 bg-gradient-to-b from-[#e8f9ff] to-[#ffffff] rounded-2xl">
         <div className="grid grid-cols-[1fr_400px] gap-8">
           {/* Left Side */}
           <div>
