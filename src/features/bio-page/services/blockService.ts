@@ -86,6 +86,13 @@ class BlockService {
   }
 
   /**
+   * Move block up or down
+   */
+  async moveBlock(bioPageId: string, blockId: string, direction: 'up' | 'down'): Promise<void> {
+    return blockRepository.move(bioPageId, blockId, direction);
+  }
+
+  /**
    * Track a block click
    */
   async trackClick(bioPageId: string, blockId: string): Promise<void> {

@@ -13,7 +13,7 @@ import {
   Twitch,
   Youtube,
 } from "lucide-react";
-import type { Block } from "./Blocks";
+import type { Block } from "@/shared/types";
 import BlockPreview from "./BlockPreview";
 
 interface Link {
@@ -307,8 +307,10 @@ export default function PublicBioView({
                   const blockData: Block = {
                     id: link.id,
                     type: link.type as any,
+                    title: link.title,
                     data: link.data,
                     isActive: link.isActive,
+                    isVisible: link.isActive,
                     order: 0,
                   };
 

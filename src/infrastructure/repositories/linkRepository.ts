@@ -80,9 +80,19 @@ class LinkRepository {
    * Create new link
    */
   async create(bioPageId: string, data: CreateLinkDTO): Promise<Link> {
-    // Get current max order
-    const existingLinks = await this.findAll(bioPageId);
-    const maxOrder = existingLinks.reduce((max, link) => Math.max(max, link.order), -1);
+    // Check if unified order was passed via data
+    let order: number;
+    const dataWithoutOrder = { ...data.data };
+    
+    if (dataWithoutOrder && typeof dataWithoutOrder._unifiedOrder === 'number') {
+      order = dataWithoutOrder._unifiedOrder;
+      delete dataWithoutOrder._unifiedOrder;
+    } else {
+      // Fallback: Get current max order from links only
+      const existingLinks = await this.findAll(bioPageId);
+      const maxOrder = existingLinks.reduce((max, link) => Math.max(max, link.order), -1);
+      order = maxOrder + 1;
+    }
 
     const payload = {
       title: data.title,
@@ -90,9 +100,9 @@ class LinkRepository {
       type: data.type || 'custom',
       platform: data.platform || null,
       isActive: data.isActive ?? true,
-      order: maxOrder + 1,
+      order,
       clickCount: 0,
-      data: data.data || {},
+      data: dataWithoutOrder || {},
       createdAt: serverTimestamp(),
     };
 

@@ -21,7 +21,16 @@ class AnalyticsService {
    * Track a page view
    */
   async trackPageView(input: TrackPageViewInput): Promise<void> {
-    const { pageId, referrer, userAgent } = input;
+    const {
+      pageId,
+      referrer,
+      userAgent,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
+    } = input;
 
     // Parse referrer domain
     const referrerDomain = referrer ? this.extractDomain(referrer) : undefined;
@@ -29,7 +38,7 @@ class AnalyticsService {
     // Detect device type
     const deviceType = userAgent ? this.detectDeviceType(userAgent) : undefined;
 
-    // Create event record
+    // Create event record with UTM parameters
     await analyticsRepository.createEvent({
       pageId,
       eventType: "page_view",
@@ -37,6 +46,11 @@ class AnalyticsService {
       referrerDomain,
       userAgent,
       deviceType,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
     });
 
     // Increment cached counter
@@ -250,7 +264,7 @@ class AnalyticsService {
       id: string;
       title: string;
       type: string;
-      clickCount: number;
+      clickCount?: number;
     }>
   ): BlockAnalytics[] {
     const blockClicks = events.filter(
@@ -286,6 +300,7 @@ class AnalyticsService {
 
   /**
    * Calculate traffic sources from page views
+   * Prioritizes UTM source over referrer domain
    */
   private calculateTrafficSources(
     pageViews: AnalyticsEvent[]
@@ -294,10 +309,21 @@ class AnalyticsService {
       return [];
     }
 
-    // Count by referrer domain
+    // Count by UTM source first, fallback to referrer domain
     const sourceCounts = new Map<string, number>();
     pageViews.forEach((event) => {
-      const source = event.referrerDomain || "Truy cập trực tiếp";
+      // Priority: UTM source > referrer domain > direct
+      let source: string;
+      if (event.utmSource) {
+        // Use UTM source with medium if available
+        source = event.utmMedium
+          ? `${event.utmSource} (${event.utmMedium})`
+          : event.utmSource;
+      } else if (event.referrerDomain) {
+        source = event.referrerDomain;
+      } else {
+        source = "Truy cập trực tiếp";
+      }
       sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
     });
 
@@ -313,6 +339,18 @@ class AnalyticsService {
       "youtube.com": "#ff0000",
       "google.com": "#4285f4",
       "Truy cập trực tiếp": "#8bc34a",
+      // UTM source colors
+      facebook: "#1877f2",
+      instagram: "#e4405f",
+      tiktok: "#000000",
+      zalo: "#0068ff",
+      twitter: "#1da1f2",
+      youtube: "#ff0000",
+      google: "#4285f4",
+      email: "#ff9800",
+      newsletter: "#ff9800",
+      linkedin: "#0077b5",
+      pinterest: "#e60023",
     };
 
     const totalViews = pageViews.length;
@@ -365,9 +403,29 @@ class AnalyticsService {
       "youtube.com": "YouTube",
       "google.com": "Google",
       "Truy cập trực tiếp": "Truy cập trực tiếp",
+      // UTM source names (lowercase to match)
+      facebook: "Facebook",
+      instagram: "Instagram",
+      tiktok: "TikTok",
+      zalo: "Zalo",
+      twitter: "Twitter",
+      youtube: "YouTube",
+      google: "Google",
+      email: "Email",
+      newsletter: "Newsletter",
+      linkedin: "LinkedIn",
+      pinterest: "Pinterest",
     };
 
-    return nameMap[domain] || domain;
+    // Check for UTM source with medium format: "source (medium)"
+    const utmMatch = domain.match(/^(\w+)\s*\((\w+)\)$/);
+    if (utmMatch) {
+      const source = nameMap[utmMatch[1].toLowerCase()] || utmMatch[1];
+      const medium = utmMatch[2];
+      return `${source} (${medium})`;
+    }
+
+    return nameMap[domain] || nameMap[domain.toLowerCase()] || domain;
   }
 
   /**

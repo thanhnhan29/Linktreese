@@ -56,7 +56,7 @@ export function useLinks(bioPageId: string | null): UseLinksReturn {
         platform,
         data,
       });
-      toast.success('Link added successfully!');
+      // toast.success('Link added successfully!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to add link');
       throw err;
@@ -93,7 +93,7 @@ export function useLinks(bioPageId: string | null): UseLinksReturn {
 
     try {
       await linkService.deleteLink(bioPageId, id);
-      toast.success('Link deleted successfully!');
+      // toast.success('Link deleted successfully!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete link');
       throw err;

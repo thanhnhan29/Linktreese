@@ -31,6 +31,12 @@ export interface CreateAnalyticsEventDTO {
   referrerDomain?: string;
   userAgent?: string;
   deviceType?: DeviceType;
+  // UTM tracking parameters
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
 }
 
 class AnalyticsRepository {
@@ -49,6 +55,12 @@ class AnalyticsRepository {
       referrerDomain: data.referrerDomain || null,
       userAgent: data.userAgent || null,
       deviceType: data.deviceType || null,
+      // UTM tracking parameters
+      utmSource: data.utmSource || null,
+      utmMedium: data.utmMedium || null,
+      utmCampaign: data.utmCampaign || null,
+      utmTerm: data.utmTerm || null,
+      utmContent: data.utmContent || null,
       timestamp: serverTimestamp(),
     };
 
@@ -172,6 +184,12 @@ class AnalyticsRepository {
       referrerDomain: data.referrerDomain || undefined,
       userAgent: data.userAgent || undefined,
       deviceType: data.deviceType || undefined,
+      // UTM tracking parameters
+      utmSource: data.utmSource || undefined,
+      utmMedium: data.utmMedium || undefined,
+      utmCampaign: data.utmCampaign || undefined,
+      utmTerm: data.utmTerm || undefined,
+      utmContent: data.utmContent || undefined,
       timestamp: data.timestamp?.toDate() || new Date(),
     };
   }

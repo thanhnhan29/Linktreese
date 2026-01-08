@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { User, LogOut, Copy, CheckCheck, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import ProBadge from "./ProBadge";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,7 @@ import PhonePreview from "./PhonePreview";
 import Analytics from "./Analytics";
 import Settings from "./Settings";
 import Appearance from "./Appearance";
-import type { Block } from "./Blocks";
+import type { Block } from "@/shared/types";
 import { useFileImage } from "@/features/bio-page";
 import { toast } from "sonner";
 
@@ -29,6 +30,7 @@ import {
   orderBy,
   serverTimestamp,
   writeBatch,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -83,6 +85,7 @@ export default function Dashboard({
   const [hideVielinkLogo, setHideVielinkLogo] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   // Get current URL base (localhost or production)
   const getShareUrl = () => {
@@ -107,6 +110,49 @@ export default function Dashboard({
       imageType: "background",
     });
 
+  // --- 0. LẤY PRO STATUS TỪ USER (AUTO-CREATE IF MISSING) ---
+  useEffect(() => {
+    if (!userId) {
+      console.log("[Dashboard] No userId provided to load PRO status");
+      return;
+    }
+
+    console.log("[Dashboard] Listening user doc:", userId);
+    const userDocRef = doc(db, "users", userId);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      async (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setIsPro(data.proPurchase || false);
+          console.log("[Dashboard] User PRO status:", data.proPurchase);
+        } else {
+          console.log(
+            "[Dashboard] User doc does not exist, creating default doc..."
+          );
+          // Auto-create user doc with default values
+          try {
+            await setDoc(userDocRef, {
+              email: userEmail,
+              proPurchase: false,
+              subscriptionPlan: "free",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+            console.log("[Dashboard] User doc created successfully");
+          } catch (error) {
+            console.error("[Dashboard] Failed to create user doc:", error);
+          }
+        }
+      },
+      (err) => {
+        console.error("[Dashboard] Error listening user doc:", err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [userId, userEmail]);
+
   // --- 1. LẤY DOC ID CỦA PAGE HIỆN TẠI ---
   useEffect(() => {
     if (!currentBioPageUsername) return;
@@ -118,8 +164,13 @@ export default function Dashboard({
 
     // Lắng nghe thay đổi của chính Bio Page (Profile, Avatar...)
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(
+        "[Dashboard] onSnapshot received:",
+        snapshot.empty ? "empty" : snapshot.docs.length + " docs"
+      );
       if (!snapshot.empty) {
         const docSnap = snapshot.docs[0];
+        console.log("[Dashboard] Setting bioPageId:", docSnap.id);
         setBioPageId(docSnap.id);
 
         const data = docSnap.data();
@@ -193,20 +244,88 @@ export default function Dashboard({
   useEffect(() => {
     if (!bioPageId) return;
 
-    // Tương tự cho blocks nếu bạn dùng
     const blocksRef = collection(db, "bio_pages", bioPageId, "blocks");
-    // Giả sử cũng có trường sortOrder
     const q = query(blocksRef, orderBy("sortOrder", "asc"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const loadedBlocks: Block[] = [];
+      let index = 0;
       snapshot.forEach((doc) => {
-        loadedBlocks.push({ id: doc.id, ...doc.data() } as Block);
+        const data = doc.data();
+        loadedBlocks.push({
+          id: doc.id,
+          type: data.type,
+          title: data.title || "",
+          isVisible: data.isVisible ?? true,
+          sortOrder: data.sortOrder ?? index, // Use index as fallback for sortOrder
+          clickCount: data.clickCount || 0,
+          data: data.data || {},
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        });
+        index++;
       });
       setBlocks(loadedBlocks);
     });
     return () => unsubscribe();
   }, [bioPageId]);
+
+  // --- 3.5 NORMALIZE ORDERS ON LOAD ---
+  const [ordersNormalized, setOrdersNormalized] = useState(false);
+  useEffect(() => {
+    if (
+      !bioPageId ||
+      ordersNormalized ||
+      (links.length === 0 && blocks.length === 0)
+    )
+      return;
+
+    // Check if normalization is needed
+    type UnifiedItem = { id: string; type: "link" | "block"; order: number };
+    const allItems: UnifiedItem[] = [
+      ...links.map((link, idx) => ({
+        id: link.id,
+        type: "link" as const,
+        order: link.order ?? idx,
+      })),
+      ...blocks.map((block, idx) => ({
+        id: block.id,
+        type: "block" as const,
+        order: block.sortOrder ?? links.length + idx,
+      })),
+    ].sort((a, b) => a.order - b.order);
+
+    const needsNormalization = allItems.some((item, idx) => item.order !== idx);
+    if (!needsNormalization) {
+      setOrdersNormalized(true);
+      return;
+    }
+
+    // Normalize orders
+    const normalizeAsync = async () => {
+      console.log("[normalizeOrders] Normalizing orders on load...");
+      try {
+        const batch = writeBatch(db);
+        allItems.forEach((item, newOrder) => {
+          if (item.type === "link") {
+            batch.update(doc(db, "bio_pages", bioPageId, "links", item.id), {
+              order: newOrder,
+            });
+          } else {
+            batch.update(doc(db, "bio_pages", bioPageId, "blocks", item.id), {
+              sortOrder: newOrder,
+            });
+          }
+        });
+        await batch.commit();
+        console.log("[normalizeOrders] Orders normalized successfully");
+      } catch (e) {
+        console.error("Error normalizing orders:", e);
+      }
+      setOrdersNormalized(true);
+    };
+    normalizeAsync();
+  }, [bioPageId, links, blocks, ordersNormalized]);
 
   // --- 4. LẤY DANH SÁCH BIO PAGES (Cho Menu Switch) ---
   useEffect(() => {
@@ -302,13 +421,26 @@ export default function Dashboard({
     url: string,
     type?: string,
     platform?: string,
-    data?: any
+    data?: any,
+    order?: number
   ) => {
     if (!bioPageId) return;
     try {
       const linksRef = collection(db, "bio_pages", bioPageId, "links");
-      const newOrder =
-        links.length > 0 ? (links[links.length - 1].order || 0) + 1 : 0;
+
+      // Use provided order or calculate max order from BOTH links and blocks
+      let newOrder = order;
+      if (newOrder === undefined) {
+        const maxLinkOrder = links.reduce(
+          (max, link) => Math.max(max, link.order ?? 0),
+          -1
+        );
+        const maxBlockOrder = blocks.reduce(
+          (max, block) => Math.max(max, block.sortOrder ?? 0),
+          -1
+        );
+        newOrder = Math.max(maxLinkOrder, maxBlockOrder) + 1;
+      }
 
       await addDoc(linksRef, {
         title,
@@ -320,6 +452,7 @@ export default function Dashboard({
         order: newOrder,
         createdAt: serverTimestamp(),
       });
+      console.log("[addLink] Link added with unified order:", newOrder);
     } catch (e) {
       console.error("Error adding link:", e);
     }
@@ -371,41 +504,196 @@ export default function Dashboard({
     }
   };
 
-  const moveLink = async (id: string, direction: "up" | "down") => {
+  // --- BLOCK CRUD OPERATIONS ---
+  const addBlock = async (
+    type: "ecommerce" | "donate" | "contact" | "chat",
+    title: string,
+    data: Record<string, unknown>,
+    order?: number
+  ) => {
     if (!bioPageId) return;
-    const index = links.findIndex((l) => l.id === id);
-    if (index === -1) return;
+    try {
+      // Use provided order or calculate max order from BOTH links and blocks
+      let newOrder = order;
+      if (newOrder === undefined) {
+        const maxLinkOrder = links.reduce(
+          (max, link) => Math.max(max, link.order ?? 0),
+          -1
+        );
+        const maxBlockOrder = blocks.reduce(
+          (max, block) => Math.max(max, block.sortOrder ?? 0),
+          -1
+        );
+        newOrder = Math.max(maxLinkOrder, maxBlockOrder) + 1;
+      }
 
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= links.length) return;
+      const blocksRef = collection(db, "bio_pages", bioPageId, "blocks");
+      await addDoc(blocksRef, {
+        type,
+        title,
+        data,
+        isVisible: true,
+        sortOrder: newOrder,
+        clickCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      console.log("[addBlock] Block added with unified order:", newOrder);
+    } catch (e) {
+      console.error("Error adding block:", e);
+      throw e;
+    }
+  };
 
-    const currentLink = links[index];
-    const targetLink = links[targetIndex];
+  const updateBlock = async (
+    id: string,
+    title?: string,
+    data?: Record<string, unknown>
+  ) => {
+    if (!bioPageId) return;
+    try {
+      // Find existing block to merge data
+      const existingBlock = blocks.find((b) => b.id === id);
 
-    // Hoán đổi vị trí order
+      const blockRef = doc(db, "bio_pages", bioPageId, "blocks", id);
+      const updates: any = { updatedAt: serverTimestamp() };
+
+      if (title !== undefined) updates.title = title;
+
+      // Merge data instead of replacing completely
+      if (data !== undefined) {
+        updates.data = {
+          ...(existingBlock?.data || {}), // Keep existing data
+          ...data, // Override with new data
+        };
+      }
+
+      await updateDoc(blockRef, updates);
+    } catch (e) {
+      console.error("Error updating block:", e);
+      throw e;
+    }
+  };
+
+  const deleteBlock = async (id: string) => {
+    if (!bioPageId) return;
+    try {
+      await deleteDoc(doc(db, "bio_pages", bioPageId, "blocks", id));
+    } catch (e) {
+      console.error("Error deleting block:", e);
+      throw e;
+    }
+  };
+
+  const toggleBlock = async (id: string) => {
+    if (!bioPageId) return;
+    const block = blocks.find((b) => b.id === id);
+    if (!block) {
+      console.error("[toggleBlock] Block not found:", id);
+      return;
+    }
+
+    console.log(
+      "[toggleBlock] Toggling block:",
+      id,
+      "current visibility:",
+      block.isVisible
+    );
+    try {
+      await updateDoc(doc(db, "bio_pages", bioPageId, "blocks", id), {
+        isVisible: !block.isVisible,
+        updatedAt: serverTimestamp(),
+      });
+      console.log("[toggleBlock] Block toggled successfully");
+    } catch (e) {
+      console.error("Error toggling block:", e);
+      throw e;
+    }
+  };
+
+  // --- UNIFIED MOVE FUNCTION - Move item to any position ---
+  const moveUnified = async (
+    id: string,
+    itemType: "link" | "block",
+    directionOrTargetIndex: "up" | "down" | number
+  ) => {
+    if (!bioPageId) return;
+
+    // Create unified items list with same order space
+    type UnifiedItem = { id: string; type: "link" | "block"; order: number };
+    const allItems: UnifiedItem[] = [
+      ...links.map((link, idx) => ({
+        id: link.id,
+        type: "link" as const,
+        order: link.order ?? idx,
+      })),
+      ...blocks.map((block, idx) => ({
+        id: block.id,
+        type: "block" as const,
+        order: block.sortOrder ?? links.length + idx,
+      })),
+    ].sort((a, b) => a.order - b.order);
+
+    // Find current item by id and type
+    const fromIndex = allItems.findIndex(
+      (item) => item.id === id && item.type === itemType
+    );
+    if (fromIndex === -1) {
+      console.error("[moveUnified] Item not found:", id, itemType);
+      return;
+    }
+
+    // Calculate target index
+    let toIndex: number;
+    if (typeof directionOrTargetIndex === "number") {
+      toIndex = directionOrTargetIndex;
+    } else {
+      toIndex = directionOrTargetIndex === "up" ? fromIndex - 1 : fromIndex + 1;
+    }
+
+    // Validate bounds
+    if (toIndex < 0 || toIndex >= allItems.length || fromIndex === toIndex) {
+      console.log("[moveUnified] Cannot move - invalid target index");
+      return;
+    }
+
+    console.log(
+      "[moveUnified] Moving item from index",
+      fromIndex,
+      "to index",
+      toIndex
+    );
+
     try {
       const batch = writeBatch(db);
-      const currentRef = doc(
-        db,
-        "bio_pages",
-        bioPageId,
-        "links",
-        currentLink.id
-      );
-      const targetRef = doc(db, "bio_pages", bioPageId, "links", targetLink.id);
 
-      // Swap order values
-      const currentOrder = currentLink.order || 0;
-      const targetOrder = targetLink.order || 0;
+      // Create new order array by removing item from old position and inserting at new
+      const newOrder = [...allItems];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
 
-      // Nếu order trùng nhau hoặc lỗi, ta có thể dùng index để gán lại
-      // Ở đây giả sử order đã chuẩn
-      batch.update(currentRef, { order: targetOrder });
-      batch.update(targetRef, { order: currentOrder });
+      // Update all affected items with their new sequential order
+      newOrder.forEach((item, newOrderIndex) => {
+        const oldOrder = item.order;
+        if (oldOrder !== newOrderIndex) {
+          if (item.type === "link") {
+            batch.update(doc(db, "bio_pages", bioPageId, "links", item.id), {
+              order: newOrderIndex,
+            });
+          } else {
+            batch.update(doc(db, "bio_pages", bioPageId, "blocks", item.id), {
+              sortOrder: newOrderIndex,
+              updatedAt: serverTimestamp(),
+            });
+          }
+        }
+      });
 
       await batch.commit();
+      console.log("[moveUnified] Move successful - item now at index", toIndex);
     } catch (e) {
-      console.error("Error moving link:", e);
+      console.error("Error in moveUnified:", e);
+      throw e;
     }
   };
 
@@ -512,6 +800,7 @@ export default function Dashboard({
               <span className="text-[#676b5f] text-sm">
                 @{currentBioPageUsername}
               </span>
+              <ProBadge isPro={isPro} size="sm" />
             </div>
             <button
               className="bg-white border border-[#e0e2d9] text-black px-4 py-2 rounded-full hover:bg-[#f6f7f5]"
@@ -621,6 +910,7 @@ export default function Dashboard({
             {currentTab === "links" && (
               <LinkEditor
                 links={links}
+                blocks={blocks}
                 user={{ username: currentBioPageUsername, email: userEmail }}
                 profileImage={profileImagePath || ""}
                 bio={currentBioPage.bio}
@@ -628,7 +918,11 @@ export default function Dashboard({
                 onUpdateLink={updateLink}
                 onDeleteLink={deleteLink}
                 onToggleLink={toggleLink}
-                onMoveLink={moveLink}
+                onAddBlock={addBlock}
+                onUpdateBlock={updateBlock}
+                onDeleteBlock={deleteBlock}
+                onToggleBlock={toggleBlock}
+                onMoveUnified={moveUnified}
                 onUpdateProfile={saveProfile}
               />
             )}
@@ -645,7 +939,7 @@ export default function Dashboard({
                 links={links}
                 blocks={blocks.map((b) => ({
                   id: b.id,
-                  title: b.data?.title || "Block",
+                  title: b.title || (b.data?.title as string) || "Block",
                   type: b.type,
                 }))}
               />
@@ -653,6 +947,8 @@ export default function Dashboard({
             {currentTab === "settings" && (
               <Settings
                 user={{ username: currentBioPageUsername, email: userEmail }}
+                userId={userId}
+                bioPageId={bioPageId || undefined}
                 onLogout={onLogout}
                 onUpdateDisplayName={updateDisplayName}
                 onSettingsChange={handleSettingsChange} // Dùng hàm mới lưu Firestore
@@ -668,7 +964,7 @@ export default function Dashboard({
               bio={currentBioPage.bio}
               profileImage={profileImagePath || ""}
               links={links.filter((link) => link.isActive)}
-              blocks={blocks}
+              blocks={blocks.filter((block) => block.isVisible)}
               appearanceConfig={
                 appearanceConfig
                   ? {

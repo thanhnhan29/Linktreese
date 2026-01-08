@@ -14,6 +14,7 @@ interface UseBlocksReturn {
   updateBlock: (id: string, title?: string, data?: Record<string, unknown>) => Promise<void>;
   deleteBlock: (id: string) => Promise<void>;
   toggleBlock: (id: string) => Promise<void>;
+  moveBlock: (id: string, direction: 'up' | 'down') => Promise<void>;
 }
 
 export function useBlocks(bioPageId: string | null): UseBlocksReturn {
@@ -43,7 +44,7 @@ export function useBlocks(bioPageId: string | null): UseBlocksReturn {
 
     try {
       await blockService.createBlock(bioPageId, { type, title, data });
-      toast.success('Block added successfully!');
+      // toast.success('Block added successfully!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to add block');
       throw err;
@@ -55,7 +56,7 @@ export function useBlocks(bioPageId: string | null): UseBlocksReturn {
 
     try {
       await blockService.updateBlock(bioPageId, id, { title, data });
-      toast.success('Block updated successfully!');
+      // toast.success('Block updated successfully!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to update block');
       throw err;
@@ -67,7 +68,7 @@ export function useBlocks(bioPageId: string | null): UseBlocksReturn {
 
     try {
       await blockService.deleteBlock(bioPageId, id);
-      toast.success('Block deleted successfully!');
+      // toast.success('Block deleted successfully!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete block');
       throw err;
@@ -85,6 +86,17 @@ export function useBlocks(bioPageId: string | null): UseBlocksReturn {
     }
   }, [bioPageId]);
 
+  const moveBlock = useCallback(async (id: string, direction: 'up' | 'down') => {
+    if (!bioPageId) return;
+
+    try {
+      await blockService.moveBlock(bioPageId, id, direction);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to move block');
+      throw err;
+    }
+  }, [bioPageId]);
+
   return {
     blocks,
     loading,
@@ -93,6 +105,7 @@ export function useBlocks(bioPageId: string | null): UseBlocksReturn {
     updateBlock,
     deleteBlock,
     toggleBlock,
+    moveBlock,
   };
 }
 

@@ -1,9 +1,9 @@
 ﻿// src/features/analytics/hooks/useAnalytics.ts
 // Analytics React hooks
 
-import { useState, useEffect, useCallback } from 'react';
-import { analyticsService } from '../services/analyticsService';
-import type { PageAnalyticsSummary } from '@/shared/types/analytics';
+import { useState, useEffect, useCallback } from "react";
+import { analyticsService } from "../services/analyticsService";
+import type { PageAnalyticsSummary } from "@/shared/types/analytics";
 
 interface UsePageAnalyticsOptions {
   pageId: string;
@@ -42,8 +42,10 @@ export function usePageAnalytics({
       const data = await analyticsService.getPageAnalytics(pageId, days);
       setAnalytics(data);
     } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch analytics'));
+      console.error("Error fetching analytics:", err);
+      setError(
+        err instanceof Error ? err : new Error("Failed to fetch analytics")
+      );
     } finally {
       setLoading(false);
     }
@@ -58,6 +60,26 @@ export function usePageAnalytics({
     loading,
     error,
     refetch: fetchAnalytics,
+  };
+}
+
+/**
+ * Parse UTM parameters from URL
+ */
+function parseUTMParams(): {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+} {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    utmSource: params.get("utm_source") || undefined,
+    utmMedium: params.get("utm_medium") || undefined,
+    utmCampaign: params.get("utm_campaign") || undefined,
+    utmTerm: params.get("utm_term") || undefined,
+    utmContent: params.get("utm_content") || undefined,
   };
 }
 
@@ -79,15 +101,19 @@ export function useTrackPageView(pageId: string | undefined) {
 
     const trackView = async () => {
       try {
+        // Parse UTM parameters from URL
+        const utmParams = parseUTMParams();
+
         await analyticsService.trackPageView({
           pageId,
           referrer: document.referrer || undefined,
           userAgent: navigator.userAgent,
+          ...utmParams,
         });
-        sessionStorage.setItem(viewKey, 'true');
+        sessionStorage.setItem(viewKey, "true");
         setTracked(true);
       } catch (err) {
-        console.error('Error tracking page view:', err);
+        console.error("Error tracking page view:", err);
       }
     };
 
@@ -101,20 +127,23 @@ export function useTrackPageView(pageId: string | undefined) {
  * Hook for tracking link clicks
  */
 export function useTrackLinkClick(pageId: string | undefined) {
-  const trackClick = useCallback(async (linkId: string) => {
-    if (!pageId || !linkId) return;
+  const trackClick = useCallback(
+    async (linkId: string) => {
+      if (!pageId || !linkId) return;
 
-    try {
-      await analyticsService.trackLinkClick({
-        pageId,
-        linkId,
-        referrer: document.referrer || undefined,
-        userAgent: navigator.userAgent,
-      });
-    } catch (err) {
-      console.error('Error tracking link click:', err);
-    }
-  }, [pageId]);
+      try {
+        await analyticsService.trackLinkClick({
+          pageId,
+          linkId,
+          referrer: document.referrer || undefined,
+          userAgent: navigator.userAgent,
+        });
+      } catch (err) {
+        console.error("Error tracking link click:", err);
+      }
+    },
+    [pageId]
+  );
 
   return trackClick;
 }
@@ -123,20 +152,23 @@ export function useTrackLinkClick(pageId: string | undefined) {
  * Hook for tracking block clicks
  */
 export function useTrackBlockClick(pageId: string | undefined) {
-  const trackClick = useCallback(async (blockId: string) => {
-    if (!pageId || !blockId) return;
+  const trackClick = useCallback(
+    async (blockId: string) => {
+      if (!pageId || !blockId) return;
 
-    try {
-      await analyticsService.trackBlockClick({
-        pageId,
-        blockId,
-        referrer: document.referrer || undefined,
-        userAgent: navigator.userAgent,
-      });
-    } catch (err) {
-      console.error('Error tracking block click:', err);
-    }
-  }, [pageId]);
+      try {
+        await analyticsService.trackBlockClick({
+          pageId,
+          blockId,
+          referrer: document.referrer || undefined,
+          userAgent: navigator.userAgent,
+        });
+      } catch (err) {
+        console.error("Error tracking block click:", err);
+      }
+    },
+    [pageId]
+  );
 
   return trackClick;
 }

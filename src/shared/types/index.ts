@@ -83,10 +83,12 @@ export interface Block {
   type: BlockType;
   title: string;
   isVisible: boolean;
-  sortOrder: number;
-  clickCount: number;
+  isActive?: boolean; // Legacy support
+  sortOrder?: number;
+  order?: number; // Legacy support
+  clickCount?: number;
   data: Record<string, unknown>;
-  createdAt: Date;
+  createdAt?: Date;
   updatedAt?: Date;
 }
 
@@ -116,3 +118,12 @@ export * from "./theme";
 
 // Re-export analytics types
 export * from "./analytics";
+
+// Re-export ecommerce types
+export * from "./ecommerce";
+
+// Re-export donate types
+export * from "./donate";
+
+// Re-export contact types
+export * from "./contact";

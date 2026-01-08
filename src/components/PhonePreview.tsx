@@ -9,8 +9,9 @@ import {
   MessageSquare,
   Twitch,
   Youtube,
+  ExternalLink,
 } from "lucide-react";
-import type { Block } from "./Blocks";
+import type { Block } from "@/shared/types";
 import BlockPreview from "./BlockPreview";
 
 interface Link {
@@ -21,6 +22,7 @@ interface Link {
   type?: string;
   platform?: string;
   data?: any;
+  order?: number;
 }
 
 interface AppearanceConfig {
@@ -238,7 +240,18 @@ export default function PhonePreview({
 
   return (
     <div className="flex flex-col items-center">
-      <p className="mb-4 text-[#676b5f]">Live Preview</p>
+      <div className="flex items-center justify-between w-full max-w-[340px] mb-4">
+        <p className="text-[#676b5f]">Live Preview</p>
+        <a
+          href={`/${username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-white text-gray-900 border-2 border-gray-900 hover:bg-gray-900 hover:text-white rounded-full transition-all duration-200 shadow-lg hover:shadow-xl group"
+        >
+          <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <span>Xem trang</span>
+        </a>
+      </div>
 
       {/* Phone Frame */}
       <div className="relative bg-black rounded-[40px] p-3 shadow-2xl">
@@ -307,7 +320,7 @@ export default function PhonePreview({
                 </p>
               )}
 
-              {/* Links */}
+              {/* Links and Blocks - Unified Order */}
               <div className="w-full space-y-3">
                 {links.length === 0 && blocks.length === 0 ? (
                   <div className="text-center py-8">
@@ -319,64 +332,85 @@ export default function PhonePreview({
                     </p>
                   </div>
                 ) : (
-                  links.map((link) => {
-                    // Check if this is a special block type
-                    if (
-                      link.type === "ecommerce" ||
-                      link.type === "donate" ||
-                      link.type === "contact" ||
-                      link.type === "chat"
-                    ) {
-                      const blockData: Block = {
-                        id: link.id,
-                        type: link.type as any,
-                        data: link.data,
-                        isActive: link.isActive,
-                        order: 0,
-                      };
+                  // Create unified items list sorted by order
+                  (() => {
+                    type UnifiedItem =
+                      | { type: "link"; item: Link; order: number }
+                      | { type: "block"; item: Block; order: number };
 
-                      const buttonStyle = getButtonStyle(link);
-                      const fontFamily = getFontFamily("body");
+                    const unifiedItems: UnifiedItem[] = [
+                      ...links.map((link, idx) => ({
+                        type: "link" as const,
+                        item: link,
+                        order: link.order ?? idx,
+                      })),
+                      ...blocks.map((block, idx) => ({
+                        type: "block" as const,
+                        item: block,
+                        order: block.sortOrder ?? links.length + idx,
+                      })),
+                    ].sort((a, b) => a.order - b.order);
 
-                      return (
-                        <BlockPreview
-                          key={link.id}
-                          block={blockData}
-                          buttonStyle={buttonStyle}
-                          fontFamily={fontFamily}
-                        />
-                      );
-                    }
+                    return unifiedItems.map((unified) => {
+                      if (unified.type === "link") {
+                        const link = unified.item;
+                        // Check if this is a special block type
+                        if (
+                          link.type === "ecommerce" ||
+                          link.type === "donate" ||
+                          link.type === "contact" ||
+                          link.type === "chat"
+                        ) {
+                          const blockData: Block = {
+                            id: link.id,
+                            type: link.type as any,
+                            title: link.title,
+                            data: link.data,
+                            isActive: link.isActive,
+                            isVisible: link.isActive,
+                            order: 0,
+                          };
 
-                    // Regular social/link rendering
-                    const socialIcon = getSocialIcon(link.platform);
-                    return (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => handleLinkClick(link)}
-                        className="flex items-center justify-center gap-2 w-full px-6 py-3 transition-opacity hover:opacity-80"
-                        style={{
-                          ...getButtonStyle(link),
-                          fontFamily: getFontFamily("body"),
-                        }}
-                      >
-                        {socialIcon}
-                        <span>{link.title}</span>
-                      </a>
-                    );
-                  })
+                          const buttonStyle = getButtonStyle(link);
+                          const fontFamily = getFontFamily("body");
+
+                          return (
+                            <BlockPreview
+                              key={link.id}
+                              block={blockData}
+                              buttonStyle={buttonStyle}
+                              fontFamily={fontFamily}
+                            />
+                          );
+                        }
+
+                        // Regular social/link rendering
+                        const socialIcon = getSocialIcon(link.platform);
+                        return (
+                          <a
+                            key={link.id}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => handleLinkClick(link)}
+                            className="flex items-center justify-center gap-2 w-full px-6 py-3 transition-opacity hover:opacity-80"
+                            style={{
+                              ...getButtonStyle(link),
+                              fontFamily: getFontFamily("body"),
+                            }}
+                          >
+                            {socialIcon}
+                            <span>{link.title}</span>
+                          </a>
+                        );
+                      } else {
+                        // Block rendering
+                        return renderBlock(unified.item);
+                      }
+                    });
+                  })()
                 )}
               </div>
-
-              {/* Blocks */}
-              {blocks.length > 0 && (
-                <div className="w-full space-y-3 mt-4">
-                  {blocks.map(renderBlock)}
-                </div>
-              )}
 
               {/* VieLink Footer - Hidden for PRO users */}
               {!hideVielinkLogo && (
