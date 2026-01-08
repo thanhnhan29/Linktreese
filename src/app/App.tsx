@@ -1,8 +1,14 @@
 // src/app/App.tsx
-// Main application component with routing
+// Main application component with domain-based routing
 
 import { useEffect, useCallback } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuth, LoginForm, SignupForm } from "@/features/auth";
 import {
   CreateUsernameForm,
@@ -15,6 +21,7 @@ import { isFirebaseConfigured } from "@/infrastructure/firebase";
 import { toast } from "sonner";
 import ForgotPasswordPage from "@/components/ForgotPasswordPage";
 import ResetPasswordPage from "@/components/ResetPasswordPage";
+import { getDomainType } from "@/shared/lib/domainUtils";
 
 export function App() {
   const {
@@ -172,6 +179,28 @@ export function App() {
     );
   }
 
+  // DOMAIN-BASED ROUTING LOGIC
+  // Custom domains should ONLY show bio pages, not platform features
+  const domainType = getDomainType();
+  const location = useLocation();
+
+  console.log("[App] Domain routing:", {
+    domainType,
+    hostname: window.location.hostname,
+    path: location.pathname,
+  });
+
+  // If accessing from custom domain, only allow bio page routes
+  if (domainType === "custom") {
+    // Custom domain can only access:
+    // 1. Root path (/) → lookup domain in Firestore
+    // 2. Username path (/:username) → lookup username
+    // Block all platform routes (/login, /dashboard, etc.)
+
+    return <PublicBioPage />;
+  }
+
+  // Platform domain - full app access
   return (
     <Routes>
       {/* Public routes */}

@@ -2,18 +2,18 @@ import { useState, useEffect } from "react";
 import { deleteUser } from "firebase/auth";
 import { auth } from "@/infrastructure/firebase";
 import { authService } from "@/features/auth/services/authService";
+import { db } from "@/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import {
   Globe,
   Lock,
   Bell,
   Trash2,
   CheckCircle,
-  AlertCircle,
   Copy,
   Crown,
-  Check,
-  X,
   Mail,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -28,6 +28,7 @@ import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import { toast } from "sonner";
 import Pricing from "./Pricing";
+import { useCustomDomain } from "@/features/custom-domain";
 
 interface User {
   username: string;
@@ -36,28 +37,43 @@ interface User {
 
 interface SettingsProps {
   user: User;
+  userId?: string;
+  bioPageId?: string;
   onLogout: () => void;
   onUpdateDisplayName: (displayName: string) => void;
   onSettingsChange?: (settings: any) => void;
 }
 
-interface DomainStatus {
-  domain: string;
-  isVerified: boolean;
-  isPro: boolean;
-}
-
 export default function Settings({
   user,
+  userId,
+  bioPageId,
   onLogout,
   onUpdateDisplayName,
   onSettingsChange,
 }: SettingsProps) {
   const [customDomain, setCustomDomain] = useState("");
-  const [domainStatus, setDomainStatus] = useState<DomainStatus | null>(null);
+  const [selectedBioPageId, setSelectedBioPageId] = useState<string>("");
+  const [internalBioPageId, setInternalBioPageId] = useState<string | null>(
+    null
+  );
+  const [internalUserId, setInternalUserId] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showDomainDialog, setShowDomainDialog] = useState(false);
+  const [showDeleteDomainDialog, setShowDeleteDomainDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [domainToDelete, setDomainToDelete] = useState<string | null>(null);
+
+  // Custom Domain hook - get all domains for user
+  const {
+    domains: userDomains,
+    createDomain,
+    verifyDomain,
+    deleteDomain,
+  } = useCustomDomain({
+    userId: userId || internalUserId || undefined,
+    enabled: !!(userId || internalUserId),
+  });
 
   // Account settings
   const [email, setEmail] = useState("");
@@ -84,13 +100,58 @@ export default function Settings({
   const [weeklyReports, setWeeklyReports] = useState(false);
 
   useEffect(() => {
-    // Load domain status from localStorage
-    const savedDomain = localStorage.getItem(`domain_${user.username}`);
-    if (savedDomain) {
-      setDomainStatus(JSON.parse(savedDomain));
-      setCustomDomain(JSON.parse(savedDomain).domain);
+    // Always sync selectedBioPageId with bioPageId from props
+    console.log("[Settings] bioPageId from props:", bioPageId);
+    if (bioPageId) {
+      setSelectedBioPageId(bioPageId);
+      setInternalBioPageId(bioPageId);
     }
+  }, [bioPageId]);
 
+  // If bioPageId prop is not available, query it from username
+  useEffect(() => {
+    const fetchBioPageId = async () => {
+      if (bioPageId || internalBioPageId) return; // Already have it
+      if (!user.username) return;
+
+      console.log("[Settings] Querying bioPageId for username:", user.username);
+      try {
+        const q = query(
+          collection(db, "bio_pages"),
+          where("username", "==", user.username)
+        );
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const docData = snapshot.docs[0];
+          const docId = docData.id;
+          const data = docData.data();
+          console.log(
+            "[Settings] Found bioPageId:",
+            docId,
+            "userId:",
+            data.userId
+          );
+          setInternalBioPageId(docId);
+          setSelectedBioPageId(docId);
+          // Also get userId from the document
+          if (data.userId && !userId && !internalUserId) {
+            setInternalUserId(data.userId);
+          }
+        } else {
+          console.error(
+            "[Settings] No bio page found for username:",
+            user.username
+          );
+        }
+      } catch (error) {
+        console.error("[Settings] Error fetching bioPageId:", error);
+      }
+    };
+
+    fetchBioPageId();
+  }, [user.username, bioPageId, internalBioPageId, userId, internalUserId]);
+
+  useEffect(() => {
     // Load user settings
     const savedSettings = localStorage.getItem(`settings_${user.username}`);
     if (savedSettings) {
@@ -106,57 +167,85 @@ export default function Settings({
       setEmail(user.email || "");
       setDisplayName(user.username || "");
     }
-  }, [user.username]);
+  }, [user.username, user.email]);
 
   const handleVerifyDomain = async () => {
     if (!customDomain) {
-      toast.error("Please enter a domain name");
+      toast.error("Vui lòng nhập domain");
       return;
     }
 
-    // Basic domain validation
-    const domainRegex =
-      /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/i;
-    if (!domainRegex.test(customDomain)) {
-      toast.error("Please enter a valid domain name");
+    // Sanitize domain: remove protocol and trailing slash
+    const sanitizedDomain = customDomain
+      .replace(/^https?:\/\//, "") // Remove http:// or https://
+      .replace(/\/$/, "") // Remove trailing slash
+      .toLowerCase()
+      .trim();
+
+    console.log("[Settings] Sanitized domain:", {
+      original: customDomain,
+      sanitized: sanitizedDomain,
+    });
+
+    // Use bioPageId from props, then internalBioPageId, then selectedBioPageId
+    const targetBioPageId =
+      bioPageId || internalBioPageId || selectedBioPageId || null;
+
+    console.log("[Settings] Verify domain:", {
+      customDomain: sanitizedDomain,
+      selectedBioPageId,
+      bioPageId,
+      internalBioPageId,
+      targetBioPageId,
+    });
+
+    if (!targetBioPageId) {
+      toast.error("Không tìm thấy Bio Page. Vui lòng reload trang và thử lại.");
       return;
     }
 
     setIsVerifying(true);
 
-    // Simulate DNS verification (in production, this would be a server-side check)
-    setTimeout(() => {
-      // Simulate 70% success rate for demo
-      const isSuccess = Math.random() > 0.3;
+    try {
+      // Step 1: Create domain with sanitized domain name
+      const createResult = await createDomain(sanitizedDomain, targetBioPageId);
 
-      if (isSuccess) {
-        const newStatus: DomainStatus = {
-          domain: customDomain,
-          isVerified: true,
-          isPro: true, // In production, check if user has Pro subscription
-        };
-        setDomainStatus(newStatus);
-        localStorage.setItem(
-          `domain_${user.username}`,
-          JSON.stringify(newStatus)
-        );
-        toast.success("Domain verified successfully!");
-        setShowDomainDialog(false);
-      } else {
-        toast.error(
-          "Unable to verify domain. Please check your DNS settings and try again."
-        );
+      if (!createResult.success) {
+        toast.error(createResult.error || "Failed to create domain");
+        setIsVerifying(false);
+        return;
       }
 
+      // Step 2: Verify domain (in demo mode, this auto-verifies)
+      const verifyResult = await verifyDomain(createResult.domainId!);
+
+      if (verifyResult.success) {
+        toast.success("Domain verified successfully!");
+        setShowDomainDialog(false);
+        setCustomDomain("");
+      } else {
+        toast.error(verifyResult.error || "Verification failed");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
+    } finally {
       setIsVerifying(false);
-    }, 2000);
+    }
   };
 
-  const handleRemoveDomain = () => {
-    setDomainStatus(null);
-    setCustomDomain("");
-    localStorage.removeItem(`domain_${user.username}`);
-    toast.success("Custom domain removed");
+  const handleRemoveDomain = async (domainId: string) => {
+    try {
+      const result = await deleteDomain(domainId);
+      if (result.success) {
+        toast.success("Đã xóa custom domain");
+        setShowDeleteDialog(false);
+        setDomainToDelete(null);
+      } else {
+        toast.error(result.error || "Không thể xóa domain");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Đã có lỗi xảy ra");
+    }
   };
 
   const handleSaveSettings = () => {
@@ -269,35 +358,59 @@ export default function Settings({
           </div>
         </div>
 
-        {domainStatus?.isVerified ? (
-          <div className="space-y-4">
-            <div className="bg-[#f0fdf4] border border-[#86efac] rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-[#16a34a] mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-black mb-1">Domain Verified</p>
-                  <p className="text-[#676b5f]">
-                    Your page is now accessible at:
-                  </p>
-                  <a
-                    href={`https://${domainStatus.domain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#8129d9] hover:underline mt-1 inline-block"
+        {userDomains && userDomains.length > 0 ? (
+          <div className="space-y-3">
+            {/* List of connected domains */}
+            {userDomains.map((domain) => (
+              <div
+                key={domain.id}
+                className="bg-[#f0fdf4] border border-[#86efac] rounded-lg p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-[#16a34a] mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-black font-medium mb-1">
+                      {domain.domain}
+                    </p>
+                    <p className="text-[#676b5f] text-sm">
+                      Bio Page ID: {domain.bioPageId.substring(0, 8)}...
+                    </p>
+                    <a
+                      href={`https://${domain.domain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#8129d9] hover:underline text-sm inline-flex items-center gap-1 mt-1"
+                    >
+                      Xem trang <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDomainToDelete(domain.id);
+                      setShowDeleteDomainDialog(true);
+                    }}
+                    className="text-red-500 hover:text-red-600"
                   >
-                    {domainStatus.domain}
-                  </a>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRemoveDomain}
-                  className="text-red-500 hover:text-red-600"
-                >
-                  Remove
-                </Button>
               </div>
-            </div>
+            ))}
+
+            {/* Add more button */}
+            <Button
+              onClick={() => {
+                if (bioPageId) setSelectedBioPageId(bioPageId);
+                setShowDomainDialog(true);
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              Thêm Domain Khác
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -318,7 +431,10 @@ export default function Settings({
             </div>
 
             <Button
-              onClick={() => setShowDomainDialog(true)}
+              onClick={() => {
+                if (bioPageId) setSelectedBioPageId(bioPageId);
+                setShowDomainDialog(true);
+              }}
               className="bg-[#8129d9] hover:bg-[#7020c0] text-white"
             >
               <Globe className="w-4 h-4 mr-2" />
@@ -553,115 +669,158 @@ export default function Settings({
 
       {/* Custom Domain Setup Dialog */}
       <Dialog open={showDomainDialog} onOpenChange={setShowDomainDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5" />
-              Setup Custom Domain
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Globe className="w-6 h-6 text-[#8129d9]" />
+              Thêm Custom Domain
             </DialogTitle>
-            <DialogDescription>
-              Connect your own domain to your Linktree profile
+            <DialogDescription className="text-base">
+              Kết nối domain của bạn với bio page để visitors có thể truy cập
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Step 1 */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-[#8129d9] text-white rounded-full flex items-center justify-center">
+          {/* Scrollable content */}
+          <div className="overflow-y-auto max-h-[calc(85vh-200px)] space-y-5 pr-2">
+            {/* Step 1: Enter Domain */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#8129d9] to-[#d946ef] text-white rounded-lg flex items-center justify-center font-semibold shadow-md">
                   1
                 </div>
-                <h4 className="text-black">Enter your domain</h4>
+                <h4 className="text-black font-medium text-lg">
+                  Nhập domain của bạn
+                </h4>
               </div>
               <input
                 type="text"
                 value={customDomain}
                 onChange={(e) => setCustomDomain(e.target.value)}
-                placeholder="mybrand.vn"
-                className="w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f]"
+                placeholder="abc123.trycloudflare.com"
+                className="w-full px-4 py-3 bg-white rounded-lg text-black placeholder:text-[#9ca3af] border-2 border-[#e0e2d9] focus:border-[#8129d9] focus:outline-none transition-colors"
               />
-            </div>
-
-            {/* Step 2 */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-[#8129d9] text-white rounded-full flex items-center justify-center">
-                  2
-                </div>
-                <h4 className="text-black">Configure DNS Settings</h4>
-              </div>
-              <div className="bg-[#f6f7f5] rounded-lg p-4 space-y-3">
-                <p className="text-[#676b5f]">
-                  Add the following CNAME record to your domain's DNS settings:
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-3">
+                <p className="text-[#676b5f] text-sm">
+                  💡 Dùng <strong>ngrok</strong> hoặc{" "}
+                  <strong>Cloudflare Tunnel</strong> để expose localhost ra
+                  internet
                 </p>
-                <div className="bg-white border border-[#e0e2d9] rounded p-3">
-                  <div className="grid grid-cols-3 gap-4 mb-2">
-                    <div>
-                      <p className="text-[#676b5f] mb-1">Type</p>
-                      <code className="text-black">CNAME</code>
-                    </div>
-                    <div>
-                      <p className="text-[#676b5f] mb-1">Name</p>
-                      <code className="text-black">@</code>
-                    </div>
-                    <div>
-                      <p className="text-[#676b5f] mb-1">Value</p>
-                      <div className="flex items-center gap-2">
-                        <code className="text-black">cname.vielink.vn</code>
-                        <button
-                          onClick={() => copyToClipboard("cname.vielink.vn")}
-                          className="text-[#8129d9] hover:text-[#7020c0]"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                  <div className="flex gap-2">
-                    <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-black mb-1">DNS Propagation Time</p>
-                      <p className="text-[#676b5f]">
-                        DNS changes can take up to 48 hours to propagate
-                        globally. You can verify your domain after making the
-                        changes.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Step 3 */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-[#8129d9] text-white rounded-full flex items-center justify-center">
-                  3
+            {/* Tutorial link */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
+                  <ExternalLink className="w-5 h-5 text-white" />
                 </div>
-                <h4 className="text-black">Verify Domain</h4>
+                <div className="flex-1">
+                  <h5 className="text-black font-medium mb-1">
+                    Chưa có tunnel?
+                  </h5>
+                  <p className="text-[#676b5f] text-sm mb-3">
+                    Xem hướng dẫn cách setup tunnel để expose localhost ra
+                    internet
+                  </p>
+                  <a
+                    href="https://github.com/cloudflare/cloudflared#installation"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#8129d9] hover:text-[#7020c0] font-medium text-sm transition-colors"
+                  >
+                    Hướng dẫn Cloudflare Tunnel{" "}
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <span className="mx-2 text-[#676b5f]">•</span>
+                  <a
+                    href="https://ngrok.com/docs/getting-started"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#8129d9] hover:text-[#7020c0] font-medium text-sm transition-colors"
+                  >
+                    Hướng dẫn ngrok <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
-              <p className="text-[#676b5f] mb-4">
-                After configuring your DNS settings, click the button below to
-                verify your domain.
-              </p>
             </div>
+          </div>
+
+          <DialogFooter className="border-t pt-4 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDomainDialog(false);
+                setCustomDomain("");
+                setSelectedBioPageId("");
+              }}
+              className="px-6"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleVerifyDomain}
+              disabled={isVerifying || !customDomain}
+              className="bg-gradient-to-r from-[#8129d9] to-[#d946ef] hover:opacity-90 text-white px-8 shadow-lg"
+            >
+              {isVerifying ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Đang kết nối...
+                </>
+              ) : (
+                <>
+                  <Globe className="w-4 h-4 mr-2" />
+                  Kết nối Domain
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Domain Confirmation Dialog */}
+      <Dialog
+        open={showDeleteDomainDialog}
+        onOpenChange={setShowDeleteDomainDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-500 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Xóa Custom Domain
+            </DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn xóa domain này? Visitors sẽ không thể truy cập
+              bio page qua domain nữa.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-red-50 border border-red-200 rounded p-4">
+            <p className="text-red-800 text-sm">
+              Domain sẽ bị gỡ khỏi hệ thống và không còn trỏ đến bio page của
+              bạn.
+            </p>
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowDomainDialog(false)}
+              onClick={() => {
+                setShowDeleteDomainDialog(false);
+                setDomainToDelete(null);
+              }}
             >
-              Cancel
+              Hủy
             </Button>
             <Button
-              onClick={handleVerifyDomain}
-              disabled={isVerifying || !customDomain}
-              className="bg-[#8129d9] hover:bg-[#7020c0]"
+              onClick={() => {
+                if (domainToDelete) {
+                  handleRemoveDomain(domainToDelete);
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
             >
-              {isVerifying ? "Verifying..." : "Verify Domain"}
+              Xóa Domain
             </Button>
           </DialogFooter>
         </DialogContent>

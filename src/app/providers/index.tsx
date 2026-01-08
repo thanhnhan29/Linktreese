@@ -1,9 +1,10 @@
 // src/app/providers/index.tsx
 // Root provider composition
 
-import { ReactNode } from 'react';
-import { AuthProvider } from './AuthProvider';
-import { Toaster } from '@/shared/components/ui/sonner';
+import { ReactNode } from "react";
+import { AuthProvider } from "./AuthProvider";
+import { DomainProvider } from "@/shared/contexts/DomainContext";
+import { Toaster } from "@/shared/components/ui/sonner";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -11,10 +12,11 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <AuthProvider>
-      {children}
-      <Toaster />
-    </AuthProvider>
+    <DomainProvider>
+      <AuthProvider>
+        {children}
+        <Toaster />
+      </AuthProvider>
+    </DomainProvider>
   );
 }
-

@@ -118,8 +118,13 @@ export default function Dashboard({
 
     // Lắng nghe thay đổi của chính Bio Page (Profile, Avatar...)
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(
+        "[Dashboard] onSnapshot received:",
+        snapshot.empty ? "empty" : snapshot.docs.length + " docs"
+      );
       if (!snapshot.empty) {
         const docSnap = snapshot.docs[0];
+        console.log("[Dashboard] Setting bioPageId:", docSnap.id);
         setBioPageId(docSnap.id);
 
         const data = docSnap.data();
@@ -204,7 +209,7 @@ export default function Dashboard({
         loadedBlocks.push({
           id: doc.id,
           type: data.type,
-          title: data.title || '',
+          title: data.title || "",
           isVisible: data.isVisible ?? true,
           sortOrder: data.sortOrder ?? index, // Use index as fallback for sortOrder
           clickCount: data.clickCount || 0,
@@ -222,13 +227,26 @@ export default function Dashboard({
   // --- 3.5 NORMALIZE ORDERS ON LOAD ---
   const [ordersNormalized, setOrdersNormalized] = useState(false);
   useEffect(() => {
-    if (!bioPageId || ordersNormalized || links.length === 0 && blocks.length === 0) return;
-    
+    if (
+      !bioPageId ||
+      ordersNormalized ||
+      (links.length === 0 && blocks.length === 0)
+    )
+      return;
+
     // Check if normalization is needed
-    type UnifiedItem = { id: string; type: 'link' | 'block'; order: number };
+    type UnifiedItem = { id: string; type: "link" | "block"; order: number };
     const allItems: UnifiedItem[] = [
-      ...links.map((link, idx) => ({ id: link.id, type: 'link' as const, order: link.order ?? idx })),
-      ...blocks.map((block, idx) => ({ id: block.id, type: 'block' as const, order: block.sortOrder ?? (links.length + idx) })),
+      ...links.map((link, idx) => ({
+        id: link.id,
+        type: "link" as const,
+        order: link.order ?? idx,
+      })),
+      ...blocks.map((block, idx) => ({
+        id: block.id,
+        type: "block" as const,
+        order: block.sortOrder ?? links.length + idx,
+      })),
     ].sort((a, b) => a.order - b.order);
 
     const needsNormalization = allItems.some((item, idx) => item.order !== idx);
@@ -239,18 +257,22 @@ export default function Dashboard({
 
     // Normalize orders
     const normalizeAsync = async () => {
-      console.log('[normalizeOrders] Normalizing orders on load...');
+      console.log("[normalizeOrders] Normalizing orders on load...");
       try {
         const batch = writeBatch(db);
         allItems.forEach((item, newOrder) => {
-          if (item.type === 'link') {
-            batch.update(doc(db, "bio_pages", bioPageId, "links", item.id), { order: newOrder });
+          if (item.type === "link") {
+            batch.update(doc(db, "bio_pages", bioPageId, "links", item.id), {
+              order: newOrder,
+            });
           } else {
-            batch.update(doc(db, "bio_pages", bioPageId, "blocks", item.id), { sortOrder: newOrder });
+            batch.update(doc(db, "bio_pages", bioPageId, "blocks", item.id), {
+              sortOrder: newOrder,
+            });
           }
         });
         await batch.commit();
-        console.log('[normalizeOrders] Orders normalized successfully');
+        console.log("[normalizeOrders] Orders normalized successfully");
       } catch (e) {
         console.error("Error normalizing orders:", e);
       }
@@ -359,12 +381,18 @@ export default function Dashboard({
     if (!bioPageId) return;
     try {
       const linksRef = collection(db, "bio_pages", bioPageId, "links");
-      
+
       // Use provided order or calculate max order from BOTH links and blocks
       let newOrder = order;
       if (newOrder === undefined) {
-        const maxLinkOrder = links.reduce((max, link) => Math.max(max, link.order ?? 0), -1);
-        const maxBlockOrder = blocks.reduce((max, block) => Math.max(max, block.sortOrder ?? 0), -1);
+        const maxLinkOrder = links.reduce(
+          (max, link) => Math.max(max, link.order ?? 0),
+          -1
+        );
+        const maxBlockOrder = blocks.reduce(
+          (max, block) => Math.max(max, block.sortOrder ?? 0),
+          -1
+        );
         newOrder = Math.max(maxLinkOrder, maxBlockOrder) + 1;
       }
 
@@ -378,7 +406,7 @@ export default function Dashboard({
         order: newOrder,
         createdAt: serverTimestamp(),
       });
-      console.log('[addLink] Link added with unified order:', newOrder);
+      console.log("[addLink] Link added with unified order:", newOrder);
     } catch (e) {
       console.error("Error adding link:", e);
     }
@@ -442,11 +470,17 @@ export default function Dashboard({
       // Use provided order or calculate max order from BOTH links and blocks
       let newOrder = order;
       if (newOrder === undefined) {
-        const maxLinkOrder = links.reduce((max, link) => Math.max(max, link.order ?? 0), -1);
-        const maxBlockOrder = blocks.reduce((max, block) => Math.max(max, block.sortOrder ?? 0), -1);
+        const maxLinkOrder = links.reduce(
+          (max, link) => Math.max(max, link.order ?? 0),
+          -1
+        );
+        const maxBlockOrder = blocks.reduce(
+          (max, block) => Math.max(max, block.sortOrder ?? 0),
+          -1
+        );
         newOrder = Math.max(maxLinkOrder, maxBlockOrder) + 1;
       }
-      
+
       const blocksRef = collection(db, "bio_pages", bioPageId, "blocks");
       await addDoc(blocksRef, {
         type,
@@ -458,7 +492,7 @@ export default function Dashboard({
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      console.log('[addBlock] Block added with unified order:', newOrder);
+      console.log("[addBlock] Block added with unified order:", newOrder);
     } catch (e) {
       console.error("Error adding block:", e);
       throw e;
@@ -473,21 +507,21 @@ export default function Dashboard({
     if (!bioPageId) return;
     try {
       // Find existing block to merge data
-      const existingBlock = blocks.find(b => b.id === id);
-      
+      const existingBlock = blocks.find((b) => b.id === id);
+
       const blockRef = doc(db, "bio_pages", bioPageId, "blocks", id);
       const updates: any = { updatedAt: serverTimestamp() };
-      
+
       if (title !== undefined) updates.title = title;
-      
+
       // Merge data instead of replacing completely
       if (data !== undefined) {
         updates.data = {
           ...(existingBlock?.data || {}), // Keep existing data
-          ...data,                          // Override with new data
+          ...data, // Override with new data
         };
       }
-      
+
       await updateDoc(blockRef, updates);
     } catch (e) {
       console.error("Error updating block:", e);
@@ -509,17 +543,22 @@ export default function Dashboard({
     if (!bioPageId) return;
     const block = blocks.find((b) => b.id === id);
     if (!block) {
-      console.error('[toggleBlock] Block not found:', id);
+      console.error("[toggleBlock] Block not found:", id);
       return;
     }
 
-    console.log('[toggleBlock] Toggling block:', id, 'current visibility:', block.isVisible);
+    console.log(
+      "[toggleBlock] Toggling block:",
+      id,
+      "current visibility:",
+      block.isVisible
+    );
     try {
       await updateDoc(doc(db, "bio_pages", bioPageId, "blocks", id), {
         isVisible: !block.isVisible,
         updatedAt: serverTimestamp(),
       });
-      console.log('[toggleBlock] Block toggled successfully');
+      console.log("[toggleBlock] Block toggled successfully");
     } catch (e) {
       console.error("Error toggling block:", e);
       throw e;
@@ -528,29 +567,39 @@ export default function Dashboard({
 
   // --- UNIFIED MOVE FUNCTION - Move item to any position ---
   const moveUnified = async (
-    id: string, 
-    itemType: 'link' | 'block', 
+    id: string,
+    itemType: "link" | "block",
     directionOrTargetIndex: "up" | "down" | number
   ) => {
     if (!bioPageId) return;
-    
+
     // Create unified items list with same order space
-    type UnifiedItem = { id: string; type: 'link' | 'block'; order: number };
+    type UnifiedItem = { id: string; type: "link" | "block"; order: number };
     const allItems: UnifiedItem[] = [
-      ...links.map((link, idx) => ({ id: link.id, type: 'link' as const, order: link.order ?? idx })),
-      ...blocks.map((block, idx) => ({ id: block.id, type: 'block' as const, order: block.sortOrder ?? (links.length + idx) })),
+      ...links.map((link, idx) => ({
+        id: link.id,
+        type: "link" as const,
+        order: link.order ?? idx,
+      })),
+      ...blocks.map((block, idx) => ({
+        id: block.id,
+        type: "block" as const,
+        order: block.sortOrder ?? links.length + idx,
+      })),
     ].sort((a, b) => a.order - b.order);
 
     // Find current item by id and type
-    const fromIndex = allItems.findIndex(item => item.id === id && item.type === itemType);
+    const fromIndex = allItems.findIndex(
+      (item) => item.id === id && item.type === itemType
+    );
     if (fromIndex === -1) {
-      console.error('[moveUnified] Item not found:', id, itemType);
+      console.error("[moveUnified] Item not found:", id, itemType);
       return;
     }
 
     // Calculate target index
     let toIndex: number;
-    if (typeof directionOrTargetIndex === 'number') {
+    if (typeof directionOrTargetIndex === "number") {
       toIndex = directionOrTargetIndex;
     } else {
       toIndex = directionOrTargetIndex === "up" ? fromIndex - 1 : fromIndex + 1;
@@ -558,15 +607,20 @@ export default function Dashboard({
 
     // Validate bounds
     if (toIndex < 0 || toIndex >= allItems.length || fromIndex === toIndex) {
-      console.log('[moveUnified] Cannot move - invalid target index');
+      console.log("[moveUnified] Cannot move - invalid target index");
       return;
     }
 
-    console.log('[moveUnified] Moving item from index', fromIndex, 'to index', toIndex);
+    console.log(
+      "[moveUnified] Moving item from index",
+      fromIndex,
+      "to index",
+      toIndex
+    );
 
     try {
       const batch = writeBatch(db);
-      
+
       // Create new order array by removing item from old position and inserting at new
       const newOrder = [...allItems];
       const [movedItem] = newOrder.splice(fromIndex, 1);
@@ -576,19 +630,21 @@ export default function Dashboard({
       newOrder.forEach((item, newOrderIndex) => {
         const oldOrder = item.order;
         if (oldOrder !== newOrderIndex) {
-          if (item.type === 'link') {
-            batch.update(doc(db, "bio_pages", bioPageId, "links", item.id), { order: newOrderIndex });
+          if (item.type === "link") {
+            batch.update(doc(db, "bio_pages", bioPageId, "links", item.id), {
+              order: newOrderIndex,
+            });
           } else {
-            batch.update(doc(db, "bio_pages", bioPageId, "blocks", item.id), { 
-              sortOrder: newOrderIndex, 
-              updatedAt: serverTimestamp() 
+            batch.update(doc(db, "bio_pages", bioPageId, "blocks", item.id), {
+              sortOrder: newOrderIndex,
+              updatedAt: serverTimestamp(),
             });
           }
         }
       });
 
       await batch.commit();
-      console.log('[moveUnified] Move successful - item now at index', toIndex);
+      console.log("[moveUnified] Move successful - item now at index", toIndex);
     } catch (e) {
       console.error("Error in moveUnified:", e);
       throw e;
@@ -844,6 +900,8 @@ export default function Dashboard({
             {currentTab === "settings" && (
               <Settings
                 user={{ username: currentBioPageUsername, email: userEmail }}
+                userId={userId}
+                bioPageId={bioPageId || undefined}
                 onLogout={onLogout}
                 onUpdateDisplayName={updateDisplayName}
                 onSettingsChange={handleSettingsChange} // Dùng hàm mới lưu Firestore

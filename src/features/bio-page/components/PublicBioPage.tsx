@@ -7,6 +7,7 @@ import PublicBioView from "../../../components/PublicBioView";
 import { bioPageService } from "../services/bioPageService";
 import { linkService } from "../services/linkService";
 import { blockService } from "../services/blockService";
+import { customDomainService } from "../../custom-domain";
 import { themeConfigToAppearance } from "../../../shared/types/theme";
 import {
   useTrackPageView,
@@ -33,23 +34,70 @@ export default function PublicBioPage() {
   const trackBlockClick = useTrackBlockClick(bioPage?.id);
 
   useEffect(() => {
-    if (!username) {
-      navigate("/login");
-      return;
-    }
-
     loadBioPage();
   }, [username]);
 
   const loadBioPage = async () => {
-    if (!username) return;
-
     try {
       setLoading(true);
       setNotFound(false);
 
-      // Load bio page data
-      const page = await bioPageService.getBioPageByUsername(username);
+      let bioPageId: string | null = null;
+      const currentHost = window.location.hostname;
+
+      console.log("[PublicBioPage] Loading bio page:", {
+        currentHost,
+        username,
+        path: window.location.pathname,
+      });
+
+      // Priority 1: Username in URL → always use username route
+      // (works with any domain: localhost, tunnel, production, custom)
+      if (username) {
+        console.log("[PublicBioPage] Username route:", username);
+        const page = await bioPageService.getBioPageByUsername(username);
+        if (!page) {
+          console.error("[PublicBioPage] Username not found:", username);
+          setNotFound(true);
+          return;
+        }
+        console.log("[PublicBioPage] Found bioPage:", page.id);
+        bioPageId = page.id;
+      }
+      // Priority 2: No username (root path) → check if custom domain exists in Firestore
+      else {
+        // Skip localhost/standard domains
+        const isLocalhost =
+          currentHost.includes("localhost") ||
+          currentHost.includes("127.0.0.1") ||
+          currentHost.includes("vielink.vn");
+
+        if (isLocalhost) {
+          console.log("[PublicBioPage] Localhost without username, redirect");
+          navigate("/login");
+          return;
+        }
+
+        // Try to find custom domain mapping (works for any domain user adds)
+        console.log("[PublicBioPage] Checking custom domain:", currentHost);
+        bioPageId = await customDomainService.getBioPageByDomain(currentHost);
+
+        if (!bioPageId) {
+          console.error(
+            "[PublicBioPage] Custom domain not found:",
+            currentHost
+          );
+          setNotFound(true);
+          return;
+        }
+        console.log(
+          "[PublicBioPage] Found bioPage via custom domain:",
+          bioPageId
+        );
+      }
+
+      // Load bio page by ID
+      const page = await bioPageService.getBioPageById(bioPageId);
 
       if (!page) {
         setNotFound(true);

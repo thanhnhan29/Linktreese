@@ -8,8 +8,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
-import { MousePointer, BarChart3, RefreshCw } from "lucide-react";
+import { MousePointer, BarChart3, RefreshCw, Globe } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -326,6 +329,103 @@ export default function Analytics({
                 />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Traffic Sources Pie Chart */}
+          <div className="bg-white rounded-lg border border-[#e0e2d9] p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-5 h-5 text-[#8129d9]" />
+              <h3 className="text-black">Traffic Sources</h3>
+            </div>
+
+            {!analytics?.trafficSources ||
+            analytics.trafficSources.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-[#f6f7f5] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Globe className="w-8 h-8 text-[#676b5f]" />
+                </div>
+                <p className="text-[#676b5f]">
+                  Chưa có dữ liệu nguồn truy cập. Chia sẻ link để bắt đầu theo
+                  dõi!
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col lg:flex-row items-center gap-6">
+                {/* Pie Chart */}
+                <div className="w-full lg:w-1/2">
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={analytics.trafficSources}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        dataKey="value"
+                        nameKey="name"
+                        isAnimationActive={false}
+                      >
+                        {analytics.trafficSources.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #e0e2d9",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: number, name: string) => [
+                          `${value} lượt`,
+                          name,
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Legend */}
+                <div className="w-full lg:w-1/2 space-y-3">
+                  {analytics.trafficSources.map((source, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-[#f6f7f5] rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: source.color }}
+                        />
+                        <span className="text-black font-medium">
+                          {source.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#676b5f] text-sm">
+                          {source.value} lượt
+                        </span>
+                        <span className="text-black font-semibold min-w-[50px] text-right">
+                          {source.percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* UTM Tip */}
+            <div className="mt-4 p-3 bg-purple-50 border border-purple-100 rounded-lg">
+              <p className="text-xs text-purple-700">
+                💡 <strong>Tip:</strong> Thêm UTM parameters vào link để theo
+                dõi chi tiết nguồn truy cập.
+                <br />
+                <code className="bg-purple-100 px-1 rounded mt-1 inline-block">
+                  vielink.vn/{username}?utm_source=facebook&utm_medium=social
+                </code>
+              </p>
+            </div>
           </div>
         </>
       )}

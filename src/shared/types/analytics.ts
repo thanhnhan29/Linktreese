@@ -16,6 +16,12 @@ export interface AnalyticsEvent {
   userAgent?: string;
   deviceType?: DeviceType;
   country?: string;
+  // UTM tracking parameters
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
   timestamp: Date;
 }
 
@@ -65,6 +71,12 @@ export interface TrackPageViewInput {
   pageId: string;
   referrer?: string;
   userAgent?: string;
+  // UTM tracking parameters
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
 }
 
 export interface TrackClickInput {

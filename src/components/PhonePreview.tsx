@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Twitch,
   Youtube,
+  ExternalLink,
 } from "lucide-react";
 import type { Block } from "@/shared/types";
 import BlockPreview from "./BlockPreview";
@@ -239,7 +240,18 @@ export default function PhonePreview({
 
   return (
     <div className="flex flex-col items-center">
-      <p className="mb-4 text-[#676b5f]">Live Preview</p>
+      <div className="flex items-center justify-between w-full max-w-[340px] mb-4">
+        <p className="text-[#676b5f]">Live Preview</p>
+        <a
+          href={`/${username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-white text-gray-900 border-2 border-gray-900 hover:bg-gray-900 hover:text-white rounded-full transition-all duration-200 shadow-lg hover:shadow-xl group"
+        >
+          <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <span>Xem trang</span>
+        </a>
+      </div>
 
       {/* Phone Frame */}
       <div className="relative bg-black rounded-[40px] p-3 shadow-2xl">
@@ -322,25 +334,25 @@ export default function PhonePreview({
                 ) : (
                   // Create unified items list sorted by order
                   (() => {
-                    type UnifiedItem = 
-                      | { type: 'link'; item: Link; order: number }
-                      | { type: 'block'; item: Block; order: number };
-                    
+                    type UnifiedItem =
+                      | { type: "link"; item: Link; order: number }
+                      | { type: "block"; item: Block; order: number };
+
                     const unifiedItems: UnifiedItem[] = [
-                      ...links.map((link, idx) => ({ 
-                        type: 'link' as const, 
-                        item: link, 
-                        order: link.order ?? idx 
+                      ...links.map((link, idx) => ({
+                        type: "link" as const,
+                        item: link,
+                        order: link.order ?? idx,
                       })),
-                      ...blocks.map((block, idx) => ({ 
-                        type: 'block' as const, 
-                        item: block, 
-                        order: block.sortOrder ?? (links.length + idx) 
+                      ...blocks.map((block, idx) => ({
+                        type: "block" as const,
+                        item: block,
+                        order: block.sortOrder ?? links.length + idx,
                       })),
                     ].sort((a, b) => a.order - b.order);
 
                     return unifiedItems.map((unified) => {
-                      if (unified.type === 'link') {
+                      if (unified.type === "link") {
                         const link = unified.item;
                         // Check if this is a special block type
                         if (
