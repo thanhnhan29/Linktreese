@@ -141,36 +141,18 @@ export default function BlockPreview({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => onBlockClick?.(block.id)}
-          className="w-full p-4 flex items-center gap-3 transition-opacity hover:opacity-80"
+          className="w-full px-6 py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
           style={{
             ...buttonStyle,
             fontFamily,
-            justifyContent: "flex-start",
           }}
         >
           <img
             src={ecommerceData.image}
             alt={ecommerceData.title}
-            className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+            className="w-5 h-5 rounded object-cover flex-shrink-0"
           />
-          <div className="flex-1 min-w-0 text-left">
-            <p
-              className="text-sm truncate"
-              style={{ color: buttonStyle.color }}
-            >
-              {ecommerceData.title}
-            </p>
-            <p
-              className="text-xs opacity-70 mt-1"
-              style={{ color: buttonStyle.color }}
-            >
-              {ecommerceData.price} • {ecommerceData.platform}
-            </p>
-          </div>
-          <ShoppingBag
-            className="w-5 h-5 flex-shrink-0"
-            style={{ color: buttonStyle.color }}
-          />
+          <span style={{ color: buttonStyle.color }}>{ecommerceData.title}</span>
         </a>
       );
     }
