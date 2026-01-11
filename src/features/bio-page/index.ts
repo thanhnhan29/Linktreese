@@ -7,6 +7,8 @@ export { default as Dashboard } from "./components/Dashboard";
 export { default as PublicBioPage } from "./components/PublicBioPage";
 export { default as DonateBlockView } from "./components/DonateBlockView";
 export { default as ContactFormBlockView } from "./components/ContactFormBlockView";
+export { default as AuthorProfileModal } from "./components/AuthorProfileModal";
+export { default as BioPageCard } from "./components/BioPageCard";
 
 // Services
 export { bioPageService } from "./services/bioPageService";
@@ -17,6 +19,7 @@ export { bioWriterService } from "./services/bioWriterService";
 export { ecommerceService, PLACEHOLDER_IMAGE } from "./services/ecommerceService";
 export { donateService, DONATE_ERROR_MESSAGES } from "./services/donateService";
 export { contactService, CONTACT_ERROR_MESSAGES } from "./services/contactService";
+export { authorService } from "./services/authorService";
 export type {
   CreateBioPageInput,
   UpdateBioPageInput,
@@ -27,6 +30,7 @@ export type {
   UpdateBlockInput,
 } from "./services/blockService";
 export type { BioStyle, BioLanguage } from "./services/bioWriterService";
+export type { AuthorOverview, BioPageSummary } from "./services/authorService";
 
 // Hooks
 export {

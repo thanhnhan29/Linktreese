@@ -63,6 +63,8 @@ interface PublicBioViewProps {
   blocks?: Block[];
   onLinkClick?: (linkId: string) => void;
   onBlockClick?: (blockId: string) => void;
+  userId?: string;
+  onAuthorClick?: () => void;
 }
 
 export default function PublicBioView({
@@ -76,6 +78,7 @@ export default function PublicBioView({
   blocks = [],
   onLinkClick,
   onBlockClick,
+  onAuthorClick,
 }: PublicBioViewProps) {
   const handleLinkClick = (link: Link) => {
     if (onLinkClick) {
@@ -227,47 +230,62 @@ export default function PublicBioView({
         style={getBackgroundStyle()}
       >
         <div className="flex flex-col items-center px-6 sm:px-8 py-8 sm:py-12">
-          {/* Profile Image */}
-          <div className="w-24 h-24 bg-[#e0e2d9] rounded-full mb-4 overflow-hidden flex items-center justify-center">
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt={name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span
-                className="text-3xl text-[#676b5f]"
-                style={{ fontFamily: getFontFamily("heading") }}
-              >
-                {name ? name[0]?.toUpperCase() : "?"}
-              </span>
-            )}
-          </div>
-
-          {/* Username */}
-          <h2
-            className="text-2xl font-bold mb-2"
-            style={{
-              fontFamily: getFontFamily("heading"),
-              color: appearanceConfig?.textColors?.username || "#000000",
-            }}
+          {/* Clickable Profile Section */}
+          <button
+            onClick={onAuthorClick}
+            disabled={!onAuthorClick}
+            className={`
+              flex flex-col items-center transition-all duration-200
+              ${onAuthorClick ? 'cursor-pointer hover:scale-105 active:scale-95' : ''}
+            `}
+            aria-label="Xem thông tin tác giả"
           >
-            @{username}
-          </h2>
+            {/* Profile Image */}
+            <div className={`
+              w-24 h-24 bg-[#e0e2d9] rounded-full mb-4 overflow-hidden flex items-center justify-center
+              ${onAuthorClick ? 'ring-4 ring-transparent hover:ring-[#8129d9]/20' : ''}
+              transition-all duration-200
+            `}>
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span
+                  className="text-3xl text-[#676b5f]"
+                  style={{ fontFamily: getFontFamily("heading") }}
+                >
+                  {name ? name[0]?.toUpperCase() : "?"}
+                </span>
+              )}
+            </div>
 
-          {/* Display Name */}
-          {name !== username && (
-            <p
-              className="text-lg mb-2"
+            {/* Username */}
+            <h2
+              className="text-2xl font-bold mb-2"
               style={{
-                fontFamily: getFontFamily("body"),
+                fontFamily: getFontFamily("heading"),
                 color: appearanceConfig?.textColors?.username || "#000000",
               }}
             >
-              {name}
-            </p>
-          )}
+              @{username}
+            </h2>
+
+            {/* Display Name */}
+            {name !== username && (
+              <p
+                className="text-lg mb-2"
+                style={{
+                  fontFamily: getFontFamily("body"),
+                  color: appearanceConfig?.textColors?.username || "#000000",
+                }}
+              >
+                {name}
+              </p>
+            )}
+          </button>
 
           {/* Bio */}
           {bio && (

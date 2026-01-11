@@ -15,6 +15,7 @@ import {
   useTrackBlockClick,
 } from "../../analytics";
 import type { BioPage, Link, Block } from "../../../shared/types";
+import AuthorProfileModal from "./AuthorProfileModal";
 
 export default function PublicBioPage() {
   const { username } = useParams<{ username: string }>();
@@ -25,6 +26,7 @@ export default function PublicBioPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
 
   // Track page view
   useTrackPageView(bioPage?.id);
@@ -199,17 +201,28 @@ export default function PublicBioPage() {
   }));
 
   return (
-    <PublicBioView
-      username={bioPage.username}
-      name={bioPage.displayName || bioPage.username}
-      bio={bioPage.bioDescription || ""}
-      profileImage={bioPage.avatarUrl || ""}
-      links={mappedLinks}
-      appearanceConfig={appearanceConfig}
-      hideVielinkLogo={bioPage.isLogoHidden}
-      blocks={mappedBlocks}
-      onLinkClick={trackLinkClick}
-      onBlockClick={trackBlockClick}
-    />
+    <>
+      <PublicBioView
+        username={bioPage.username}
+        name={bioPage.displayName || bioPage.username}
+        bio={bioPage.bioDescription || ""}
+        profileImage={bioPage.avatarUrl || ""}
+        links={mappedLinks}
+        appearanceConfig={appearanceConfig}
+        hideVielinkLogo={bioPage.isLogoHidden}
+        blocks={mappedBlocks}
+        onLinkClick={trackLinkClick}
+        onBlockClick={trackBlockClick}
+        onAuthorClick={() => setIsAuthorModalOpen(true)}
+      />
+      
+      {/* Author Profile Modal */}
+      <AuthorProfileModal
+        isOpen={isAuthorModalOpen}
+        onClose={() => setIsAuthorModalOpen(false)}
+        userId={bioPage.userId}
+        currentUsername={bioPage.username}
+      />
+    </>
   );
 }
