@@ -49,3 +49,10 @@ dist-*/
 
 # Ignore local IDE envs
 .env.local
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
