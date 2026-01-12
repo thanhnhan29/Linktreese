@@ -16,7 +16,9 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
@@ -31,6 +33,9 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
 
   const validatePassword = (password: string) => {
     const errors = [];
+    if (password.length > 50) {
+      errors.push('cannot exceed 50 characters');
+    }
     if (password.length < 8) {
       errors.push('at least 8 characters');
     }
@@ -48,7 +53,9 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
 
   const handleEmailChange = (value: string) => {
     setEmail(value);
-    if (value && !validateEmail(value)) {
+    if (value && value.length > 50) {
+      setEmailError('Email cannot exceed 50 characters');
+    } else if (value && !validateEmail(value)) {
       setEmailError('Please enter a valid email address');
     } else if (value && EXISTING_EMAILS.includes(value)) {
       setEmailError('This email is already registered');
@@ -67,7 +74,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
         setPasswordError('');
       }
     }
-    
+
     // Re-validate confirm password if it exists
     if (confirmPassword && value !== confirmPassword) {
       setConfirmPasswordError('Passwords do not match');
@@ -87,8 +94,8 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    
+
+
     let hasError = false;
 
     // 1. Validate Email
@@ -137,7 +144,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
         setEmailSent(true);
       }
     } catch (error: any) {
-      
+
       if (error.code === 'auth/email-already-in-use') {
         setEmailError('This email is already registered');
       } else {
@@ -150,7 +157,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
   // Implement real Google signup flow (signInWithPopup + GoogleAuthProvider)
   // later when Firebase auth UI is wired up.
   const handleGoogleSignup = async () => {
-      try {
+    try {
       // TODO: implement Google sign-up
     } catch (err) {
       // noop
@@ -181,7 +188,7 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
             </div>
             <h1 className="font-['Inter'] tracking-[-2px] text-black mb-4 text-[24px]">Check your email</h1>
             <p className="tracking-[-0.32px] text-[#676b5f] mb-8">
-              We've sent a verification link to <span className="font-semibold text-black">{email}</span>. 
+              We've sent a verification link to <span className="font-semibold text-black">{email}</span>.
               Please check your inbox and click the link to verify your account.
             </p>
             <div className="bg-[#f6f7f5] rounded-[8px] p-4 mb-8">
@@ -199,106 +206,144 @@ export default function SignupPage({ onSignup, onSwitchToLogin }: SignupPageProp
         ) : (
           // Signup form
           <>
-            
+
             <h1 className="font-['Inter'] tracking-[-2px] text-black mb-6 text-[24px]">Tell us about yourself</h1>
             <p className="tracking-[-0.32px] text-[#676b5f] mb-12">
               For a personalized Linktree experience
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email */}
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => handleEmailChange(e.target.value)}
-              placeholder="Your email"
-              className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 text-black placeholder:text-[#676b5f] ${
-                emailError ? 'border-2 border-red-500' : ''
-              }`}
-            />
-            {emailError && (
-              <p className="text-red-500 mt-2 text-[14px]">{emailError}</p>
-            )}
-          </div>
+              {/* Email */}
+              <div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  placeholder="Your email"
+                  maxLength={50}
+                  className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 text-black placeholder:text-[#676b5f] ${emailError ? 'border-2 border-red-500' : ''
+                    }`}
+                />
+                {emailError && (
+                  <p className="text-red-500 mt-2 text-[14px]">{emailError}</p>
+                )}
+              </div>
 
-          {/* Password */}
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => handlePasswordChange(e.target.value)}
-              placeholder="Create a password"
-              className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 text-black placeholder:text-[#676b5f] ${
-                passwordError ? 'border-2 border-red-500' : ''
-              }`}
-            />
-            {passwordError && (
-              <p className="text-red-500 mt-2 text-[14px]">{passwordError}</p>
-            )}
-          </div>
+              {/* Password */}
+              <div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    placeholder="Create a password"
+                    maxLength={50}
+                    className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 pr-12 text-black placeholder:text-[#676b5f] ${passwordError ? 'border-2 border-red-500' : ''
+                      }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#676b5f] hover:text-black transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {passwordError && (
+                  <p className="text-red-500 mt-2 text-[14px]">{passwordError}</p>
+                )}
+              </div>
 
-          {/* Confirm Password */}
-          <div>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-              placeholder="Confirm password"
-              className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 text-black placeholder:text-[#676b5f] ${
-                confirmPasswordError ? 'border-2 border-red-500' : ''
-              }`}
-            />
-            {confirmPasswordError && (
-              <p className="text-red-500 mt-2 text-[14px]">{confirmPasswordError}</p>
-            )}
-          </div>
+              {/* Confirm Password */}
+              <div>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                    placeholder="Confirm password"
+                    maxLength={50}
+                    className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 pr-12 text-black placeholder:text-[#676b5f] ${confirmPasswordError ? 'border-2 border-red-500' : ''
+                      }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#676b5f] hover:text-black transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {confirmPasswordError && (
+                  <p className="text-red-500 mt-2 text-[14px]">{confirmPasswordError}</p>
+                )}
+              </div>
 
-          <button
-            type="submit"
-            className="bg-[#8129d9] text-white rounded-[64px] w-full py-3 tracking-[-0.32px] hover:bg-[#7020c0] transition-colors text-[16px] text-center mt-8"
-          >
-            Continue
-          </button>
+              <button
+                type="submit"
+                className="bg-[#8129d9] text-white rounded-[64px] w-full py-3 tracking-[-0.32px] hover:bg-[#7020c0] transition-colors text-[16px] text-center mt-8"
+              >
+                Continue
+              </button>
 
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#e0e2d9]"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-4 bg-white text-[#676b5f]">or</span>
-            </div>
-          </div>
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#e0e2d9]"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-4 bg-white text-[#676b5f]">or</span>
+                </div>
+              </div>
 
-          {/* Google Signup Button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignup}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-[#e0e2d9] rounded-[64px] hover:bg-[#f6f7f5] transition-colors"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19.8055 10.2292C19.8055 9.55139 19.75 8.86806 19.6278 8.20139H10.2V12.0486H15.6014C15.3778 13.2903 14.6569 14.3583 13.6139 15.0681V17.5764H16.825C18.7125 15.8347 19.8055 13.2681 19.8055 10.2292Z" fill="#4285F4"/>
-              <path d="M10.2 20C12.9 20 15.1722 19.1042 16.8278 17.5764L13.6167 15.0681C12.7361 15.6681 11.5972 16.0208 10.2028 16.0208C7.59167 16.0208 5.38056 14.2625 4.60556 11.9H1.28333V14.4903C2.96111 17.8486 6.41944 20 10.2 20Z" fill="#34A853"/>
-              <path d="M4.60278 11.8986C4.17778 10.6569 4.17778 9.34028 4.60278 8.09861V5.50833H1.28333C-0.127778 8.31528 -0.127778 11.6819 1.28333 14.4889L4.60278 11.8986Z" fill="#FBBC04"/>
-              <path d="M10.2 3.97917C11.6722 3.95694 13.0889 4.52361 14.1556 5.53472L17.0167 2.67361C15.0861 0.873611 12.5444 -0.0680556 10.2 -0.000277779C6.41944 -0.000277779 2.96111 2.15139 1.28333 5.50972L4.60278 8.1C5.37222 5.73472 7.58889 3.97917 10.2 3.97917Z" fill="#EA4335"/>
-            </svg>
-            <span className="text-black tracking-[-0.32px]">Sign up with Google</span>
-          </button>
-
-          <div className="text-center">
-            <p className="text-[#676b5f]">
-              Already have an account?{' '}
+              {/* Google Signup Button */}
               <button
                 type="button"
-                onClick={onSwitchToLogin}
-                className="text-[#8129d9] hover:underline"
+                onClick={handleGoogleSignup}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-[#e0e2d9] rounded-[64px] hover:bg-[#f6f7f5] transition-colors"
               >
-                Log in
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19.8055 10.2292C19.8055 9.55139 19.75 8.86806 19.6278 8.20139H10.2V12.0486H15.6014C15.3778 13.2903 14.6569 14.3583 13.6139 15.0681V17.5764H16.825C18.7125 15.8347 19.8055 13.2681 19.8055 10.2292Z" fill="#4285F4" />
+                  <path d="M10.2 20C12.9 20 15.1722 19.1042 16.8278 17.5764L13.6167 15.0681C12.7361 15.6681 11.5972 16.0208 10.2028 16.0208C7.59167 16.0208 5.38056 14.2625 4.60556 11.9H1.28333V14.4903C2.96111 17.8486 6.41944 20 10.2 20Z" fill="#34A853" />
+                  <path d="M4.60278 11.8986C4.17778 10.6569 4.17778 9.34028 4.60278 8.09861V5.50833H1.28333C-0.127778 8.31528 -0.127778 11.6819 1.28333 14.4889L4.60278 11.8986Z" fill="#FBBC04" />
+                  <path d="M10.2 3.97917C11.6722 3.95694 13.0889 4.52361 14.1556 5.53472L17.0167 2.67361C15.0861 0.873611 12.5444 -0.0680556 10.2 -0.000277779C6.41944 -0.000277779 2.96111 2.15139 1.28333 5.50972L4.60278 8.1C5.37222 5.73472 7.58889 3.97917 10.2 3.97917Z" fill="#EA4335" />
+                </svg>
+                <span className="text-black tracking-[-0.32px]">Sign up with Google</span>
               </button>
-            </p>
-          </div>
-        </form>
+
+              <div className="text-center">
+                <p className="text-[#676b5f]">
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={onSwitchToLogin}
+                    className="text-[#8129d9] hover:underline"
+                  >
+                    Log in
+                  </button>
+                </p>
+              </div>
+            </form>
           </>
         )}
       </div>

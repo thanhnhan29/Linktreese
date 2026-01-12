@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { authService } from "@/features/auth/services/authService";
 import svgPaths from "../imports/svg-du8004kdwc";
 
@@ -11,21 +12,35 @@ export default function ForgotPasswordPage({
 }: ForgotPasswordPageProps) {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const handleEmailChange = (value: string) => {
     setEmail(value);
     if (emailError) setEmailError("");
   };
 
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaVerified(!!token);
+    if (token) setCaptchaError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setEmailError("");
+    setCaptchaError("");
 
     if (!email) {
       setEmailError("Email is required");
+      return;
+    }
+
+    if (!captchaVerified) {
+      setCaptchaError("Please complete the captcha");
       return;
     }
 
@@ -36,6 +51,9 @@ export default function ForgotPasswordPage({
       setEmailSent(true);
     } catch (error: any) {
       setEmailError(error.message || "Failed to send reset email");
+      // Reset captcha on error
+      recaptchaRef.current?.reset();
+      setCaptchaVerified(false);
     } finally {
       setIsLoading(false);
     }
@@ -74,12 +92,24 @@ export default function ForgotPasswordPage({
                   onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="Your email"
                   disabled={isLoading}
-                  className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 text-black placeholder:text-[#676b5f] disabled:opacity-50 ${
-                    emailError ? "border-2 border-red-500" : ""
-                  }`}
+                  maxLength={50}
+                  className={`bg-[#f6f7f5] rounded-[8px] w-full px-4 py-4 text-black placeholder:text-[#676b5f] disabled:opacity-50 ${emailError ? "border-2 border-red-500" : ""
+                    }`}
                 />
                 {emailError && (
                   <p className="text-red-500 mt-2 text-[14px]">{emailError}</p>
+                )}
+              </div>
+
+              {/* reCAPTCHA */}
+              <div>
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
+                  onChange={handleCaptchaChange}
+                />
+                {captchaError && (
+                  <p className="text-red-500 mt-2 text-[14px]">{captchaError}</p>
                 )}
               </div>
 

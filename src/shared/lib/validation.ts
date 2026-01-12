@@ -23,6 +23,10 @@ export function validateEmail(email: string): ValidationResult {
     return { isValid: false, error: 'Email is required' };
   }
 
+  if (email.length > 50) {
+    return { isValid: false, error: 'Email cannot exceed 50 characters' };
+  }
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return { isValid: false, error: 'Please enter a valid email address' };
@@ -40,6 +44,10 @@ export function validatePassword(password: string): ValidationResult {
 
   if (!password) {
     return { isValid: false, error: 'Password is required', errors: ['Password is required'] };
+  }
+
+  if (password.length > 50) {
+    return { isValid: false, error: 'Password cannot exceed 50 characters' };
   }
 
   if (password.length < 8) {
@@ -146,7 +154,7 @@ export function validateHexColor(color: string): boolean {
  */
 export function validateVietnamesePhone(phone: string): ValidationResult {
   const cleaned = phone.replace(/[\s-]/g, '');
-  
+
   if (!cleaned) {
     return { isValid: false, error: 'Phone number is required' };
   }

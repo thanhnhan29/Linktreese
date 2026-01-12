@@ -1,6 +1,9 @@
 ## Node
 node_modules/
 
+# Legacy JS folder
+js/
+
 # build / output
 dist/
 build/
