@@ -9,9 +9,9 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  title = "Chưa có link nào",
-  description = "Hãy tạo link đầu tiên của bạn để bắt đầu chia sẻ",
-  actionLabel = "Tạo link ngay",
+  title = "No links yet",
+  description = "Create your first link to start sharing with the world",
+  actionLabel = "Create link",
   onAction,
 }: EmptyStateProps) {
   return (

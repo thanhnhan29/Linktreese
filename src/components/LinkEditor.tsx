@@ -852,15 +852,17 @@ export default function LinkEditor({
     if (link.type === "ecommerce") {
       return (
         <div className="flex items-center gap-3">
-          <img
-            src={link.data?.image}
-            alt={link.title}
-            className="w-12 h-12 rounded-lg object-cover"
-          />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}>
+            <img
+              src={link.data?.image}
+              alt={link.title}
+              className="w-10 h-10 rounded-md object-cover"
+            />
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black truncate">{link.title}</p>
-            <p className="text-sm text-[#676b5f]">
-              {link.data?.price} • {link.data?.platform}
+            <p className="font-semibold text-gray-900 truncate">{link.title}</p>
+            <p className="text-sm text-orange-600 font-medium">
+              {link.data?.price} <span className="text-gray-400">• {link.data?.platform}</span>
             </p>
           </div>
         </div>
@@ -868,18 +870,18 @@ export default function LinkEditor({
     } else if (link.type === "donate") {
       return (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-pink-50 rounded-full flex items-center justify-center">
-            <Heart className="w-5 h-5 text-pink-600" />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)' }}>
+            <Heart className="w-5 h-5" style={{ color: '#ffffff', fill: '#ffffff' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black">{link.title}</p>
-            <p className="text-sm text-[#676b5f]">
+            <p className="font-semibold text-gray-900">{link.title}</p>
+            <p className="text-sm text-pink-600 font-medium">
               {link.data?.method === "vietqr"
                 ? "VietQR"
                 : link.data?.method === "momo"
                 ? "Momo"
                 : "ZaloPay"}{" "}
-              payment
+              <span className="text-gray-400">payment</span>
             </p>
           </div>
         </div>
@@ -887,13 +889,13 @@ export default function LinkEditor({
     } else if (link.type === "contact") {
       return (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-            <Mail className="w-5 h-5 text-blue-600" />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
+            <Mail className="w-5 h-5" style={{ color: '#ffffff' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black">{link.title}</p>
-            <p className="text-sm text-[#676b5f]">
-              Sends to: {link.data?.receiverEmail}
+            <p className="font-semibold text-gray-900">{link.title}</p>
+            <p className="text-sm text-blue-600 font-medium truncate">
+              <span className="text-gray-400">To:</span> {link.data?.receiverEmail}
             </p>
           </div>
         </div>
@@ -901,23 +903,27 @@ export default function LinkEditor({
     } else if (link.type === "chat") {
       return (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-green-600" />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+            <MessageCircle className="w-5 h-5" style={{ color: '#ffffff' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black">{link.title}</p>
-            <p className="text-sm text-[#676b5f]">{link.data?.phoneNumber}</p>
+            <p className="font-semibold text-gray-900">{link.title}</p>
+            <p className="text-sm text-green-600 font-medium">{link.data?.phoneNumber}</p>
           </div>
         </div>
       );
     } else {
       return (
-        <div className="flex-1">
-          <p className="text-black">{link.title}</p>
-          <p className="text-[#676b5f] flex items-center gap-1 text-sm">
-            <ExternalLink className="w-3 h-3" />
-            {link.url}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}>
+            <ExternalLink className="w-5 h-5" style={{ color: '#ffffff' }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900">{link.title}</p>
+            <p className="text-sm text-purple-600 font-medium truncate">
+              {link.url}
+            </p>
+          </div>
         </div>
       );
     }
@@ -929,15 +935,17 @@ export default function LinkEditor({
       const data = block.data as any;
       return (
         <div className="flex items-center gap-3">
-          <img
-            src={data?.image || PLACEHOLDER_IMAGE}
-            alt={block.title}
-            className="w-12 h-12 rounded-lg object-cover"
-          />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}>
+            <img
+              src={data?.image || PLACEHOLDER_IMAGE}
+              alt={block.title}
+              className="w-10 h-10 rounded-md object-cover"
+            />
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black truncate">{block.title}</p>
-            <p className="text-sm text-[#676b5f]">
-              {data?.price || "N/A"} • {data?.platform || "E-commerce"}
+            <p className="font-semibold text-gray-900 truncate">{block.title}</p>
+            <p className="text-sm text-orange-600 font-medium">
+              {data?.price || "N/A"} <span className="text-gray-400">• {data?.platform || "E-commerce"}</span>
             </p>
           </div>
         </div>
@@ -946,18 +954,18 @@ export default function LinkEditor({
       const data = block.data as any;
       return (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-pink-50 rounded-full flex items-center justify-center">
-            <Heart className="w-5 h-5 text-pink-600" />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)' }}>
+            <Heart className="w-5 h-5" style={{ color: '#ffffff', fill: '#ffffff' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black">{block.title}</p>
-            <p className="text-sm text-[#676b5f]">
+            <p className="font-semibold text-gray-900">{block.title}</p>
+            <p className="text-sm text-pink-600 font-medium">
               {data?.method === "vietqr"
                 ? "VietQR"
                 : data?.method === "momo"
                 ? "Momo"
                 : "ZaloPay"}{" "}
-              payment
+              <span className="text-gray-400">payment</span>
             </p>
           </div>
         </div>
@@ -966,13 +974,13 @@ export default function LinkEditor({
       const data = block.data as any;
       return (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-            <Mail className="w-5 h-5 text-blue-600" />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
+            <Mail className="w-5 h-5" style={{ color: '#ffffff' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black">{block.title}</p>
-            <p className="text-sm text-[#676b5f]">
-              Sends to: {data?.receiverEmail || "N/A"}
+            <p className="font-semibold text-gray-900">{block.title}</p>
+            <p className="text-sm text-blue-600 font-medium truncate">
+              <span className="text-gray-400">To:</span> {data?.receiverEmail || "N/A"}
             </p>
           </div>
         </div>
@@ -981,12 +989,12 @@ export default function LinkEditor({
       const data = block.data as any;
       return (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-green-600" />
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+            <MessageCircle className="w-5 h-5" style={{ color: '#ffffff' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-black">{block.title}</p>
-            <p className="text-sm text-[#676b5f]">
+            <p className="font-semibold text-gray-900">{block.title}</p>
+            <p className="text-sm text-green-600 font-medium">
               {data?.phoneNumber || "N/A"}
             </p>
           </div>
@@ -1174,93 +1182,131 @@ export default function LinkEditor({
             </p>
 
             {/* Link Type Cards */}
-            <div className="grid grid-cols-5 gap-3 mt-4">
-              <button
-                onClick={() => setLinkType("social")}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                  linkType === "social"
-                    ? "border-[#8129d9] bg-purple-50"
-                    : "border-[#e0e2d9] hover:border-[#8129d9]"
-                }`}
-              >
-                <ExternalLink
-                  className={`w-6 h-6 mx-auto mb-2 ${
-                    linkType === "social" ? "text-[#8129d9]" : "text-[#676b5f]"
+            <div className="mt-5">
+              <p className="text-sm font-medium text-gray-600 mb-2">Select type</p>
+              <div className="grid grid-cols-5 gap-2">
+                {/* Social Link */}
+                <button
+                  onClick={() => setLinkType("social")}
+                  className={`group p-2.5 rounded-xl border-2 transition-all duration-200 text-center ${
+                    linkType === "social"
+                      ? "border-purple-500 bg-purple-50 shadow-sm"
+                      : "border-gray-200 hover:border-purple-300 bg-white"
                   }`}
-                />
-                <p className="text-xs text-black">Social</p>
-              </button>
-              <button
-                onClick={() => setLinkType("ecommerce")}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                  linkType === "ecommerce"
-                    ? "border-orange-500 bg-orange-50"
-                    : "border-[#e0e2d9] hover:border-orange-500"
-                }`}
-              >
-                <ShoppingBag
-                  className={`w-6 h-6 mx-auto mb-2 ${
+                >
+                  <div className={`w-10 h-10 mx-auto mb-1.5 rounded-lg flex items-center justify-center ${
+                    linkType === "social" ? "bg-purple-100" : "bg-gray-100 group-hover:bg-purple-50"
+                  }`}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={linkType === "social" ? "#9333ea" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </div>
+                  <p className={`text-[11px] font-medium ${linkType === "social" ? "text-purple-600" : "text-gray-500"}`}>Social</p>
+                </button>
+
+                {/* Product */}
+                <button
+                  onClick={() => setLinkType("ecommerce")}
+                  className={`group p-2.5 rounded-xl border-2 transition-all duration-200 text-center ${
                     linkType === "ecommerce"
-                      ? "text-orange-600"
-                      : "text-[#676b5f]"
+                      ? "border-orange-500 bg-orange-50 shadow-sm"
+                      : "border-gray-200 hover:border-orange-300 bg-white"
                   }`}
-                />
-                <p className="text-xs text-black">Product</p>
-              </button>
-              <button
-                onClick={() => setLinkType("donate")}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                  linkType === "donate"
-                    ? "border-pink-500 bg-pink-50"
-                    : "border-[#e0e2d9] hover:border-pink-500"
-                }`}
-              >
-                <Heart
-                  className={`w-6 h-6 mx-auto mb-2 ${
-                    linkType === "donate" ? "text-pink-600" : "text-[#676b5f]"
+                >
+                  <div className={`w-10 h-10 mx-auto mb-1.5 rounded-lg flex items-center justify-center ${
+                    linkType === "ecommerce" ? "bg-orange-100" : "bg-gray-100 group-hover:bg-orange-50"
+                  }`}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={linkType === "ecommerce" ? "#ea580c" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <path d="M16 10a4 4 0 0 1-8 0" />
+                    </svg>
+                  </div>
+                  <p className={`text-[11px] font-medium ${linkType === "ecommerce" ? "text-orange-600" : "text-gray-500"}`}>Product</p>
+                </button>
+
+                {/* Donate */}
+                <button
+                  onClick={() => setLinkType("donate")}
+                  className={`group p-2.5 rounded-xl border-2 transition-all duration-200 text-center ${
+                    linkType === "donate"
+                      ? "border-pink-500 bg-pink-50 shadow-sm"
+                      : "border-gray-200 hover:border-pink-300 bg-white"
                   }`}
-                />
-                <p className="text-xs text-black">Donate</p>
-              </button>
-              <button
-                onClick={() => setLinkType("contact")}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                  linkType === "contact"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-[#e0e2d9] hover:border-blue-500"
-                }`}
-              >
-                <Mail
-                  className={`w-6 h-6 mx-auto mb-2 ${
-                    linkType === "contact" ? "text-blue-600" : "text-[#676b5f]"
+                >
+                  <div className={`w-10 h-10 mx-auto mb-1.5 rounded-lg flex items-center justify-center ${
+                    linkType === "donate" ? "bg-pink-100" : "bg-gray-100 group-hover:bg-pink-50"
+                  }`}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill={linkType === "donate" ? "#ec4899" : "none"} stroke={linkType === "donate" ? "#db2777" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </div>
+                  <p className={`text-[11px] font-medium ${linkType === "donate" ? "text-pink-600" : "text-gray-500"}`}>Donate</p>
+                </button>
+
+                {/* Contact */}
+                <button
+                  onClick={() => setLinkType("contact")}
+                  className={`group p-2.5 rounded-xl border-2 transition-all duration-200 text-center ${
+                    linkType === "contact"
+                      ? "border-blue-500 bg-blue-50 shadow-sm"
+                      : "border-gray-200 hover:border-blue-300 bg-white"
                   }`}
-                />
-                <p className="text-xs text-black">Contact</p>
-              </button>
-              <button
-                onClick={() => setLinkType("chat")}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                  linkType === "chat"
-                    ? "border-green-500 bg-green-50"
-                    : "border-[#e0e2d9] hover:border-green-500"
-                }`}
-              >
-                <MessageCircle
-                  className={`w-6 h-6 mx-auto mb-2 ${
-                    linkType === "chat" ? "text-green-600" : "text-[#676b5f]"
+                >
+                  <div className={`w-10 h-10 mx-auto mb-1.5 rounded-lg flex items-center justify-center ${
+                    linkType === "contact" ? "bg-blue-100" : "bg-gray-100 group-hover:bg-blue-50"
+                  }`}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={linkType === "contact" ? "#2563eb" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </div>
+                  <p className={`text-[11px] font-medium ${linkType === "contact" ? "text-blue-600" : "text-gray-500"}`}>Contact</p>
+                </button>
+
+                {/* Chat */}
+                <button
+                  onClick={() => setLinkType("chat")}
+                  className={`group p-2.5 rounded-xl border-2 transition-all duration-200 text-center ${
+                    linkType === "chat"
+                      ? "border-green-500 bg-green-50 shadow-sm"
+                      : "border-gray-200 hover:border-green-300 bg-white"
                   }`}
-                />
-                <p className="text-xs text-black">Chat</p>
-              </button>
+                >
+                  <div className={`w-10 h-10 mx-auto mb-1.5 rounded-lg flex items-center justify-center ${
+                    linkType === "chat" ? "bg-green-100" : "bg-gray-100 group-hover:bg-green-50"
+                  }`}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={linkType === "chat" ? "#16a34a" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                    </svg>
+                  </div>
+                  <p className={`text-[11px] font-medium ${linkType === "chat" ? "text-green-600" : "text-gray-500"}`}>Chat</p>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4 mt-6">
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-4 bg-white text-sm font-medium text-gray-400">Enter details</span>
+              </div>
+            </div>
+
+            <div className="space-y-5">
               {/* Social Media Form */}
               {linkType === "social" && (
-                <>
-                  <div>
-                    <label className="block mb-2 text-black">Title</label>
-                    <input
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="link-title" className="text-sm font-medium text-gray-700">
+                      Title
+                    </Label>
+                    <Input
+                      id="link-title"
                       type="text"
                       value={newLinkTitle}
                       onChange={(e) => {
@@ -1271,20 +1317,26 @@ export default function LinkEditor({
                             socialTitle: undefined,
                           }));
                       }}
-                      placeholder="Follow me on Instagram"
-                      className={`w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f] ${
-                        errors.socialTitle ? "border-2 border-red-500" : ""
+                      placeholder="e.g., Follow me on Instagram"
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.socialTitle 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-[#8129d9] focus:border-[#8129d9]"
                       }`}
                     />
                     {errors.socialTitle && (
-                      <p className="text-xs text-red-500 mt-1">
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                         {errors.socialTitle}
                       </p>
                     )}
                   </div>
-                  <div>
-                    <label className="block mb-2 text-black">URL</label>
-                    <input
+                  <div className="space-y-2">
+                    <Label htmlFor="link-url" className="text-sm font-medium text-gray-700">
+                      URL
+                    </Label>
+                    <Input
+                      id="link-url"
                       type="url"
                       value={newLinkUrl}
                       onChange={(e) => {
@@ -1296,90 +1348,102 @@ export default function LinkEditor({
                           }));
                       }}
                       placeholder="https://instagram.com/yourname"
-                      className={`w-full px-4 py-2 bg-[#f6f7f5] rounded-lg text-black placeholder:text-[#676b5f] ${
-                        errors.socialUrl ? "border-2 border-red-500" : ""
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.socialUrl 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-[#8129d9] focus:border-[#8129d9]"
                       }`}
                     />
                     {detectedPlatform && (
-                      <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
-                        <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                        Detected:{" "}
-                        {detectedPlatform.charAt(0).toUpperCase() +
-                          detectedPlatform.slice(1)}
+                      <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span className="font-medium">
+                          Detected: {detectedPlatform.charAt(0).toUpperCase() + detectedPlatform.slice(1)}
+                        </span>
                       </div>
                     )}
                     {newLinkUrl && !detectedPlatform && (
-                      <div className="mt-2 flex items-center gap-2 text-sm text-amber-600">
-                        <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
-                        Platform not detected - will display as regular link
+                      <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                        <span>Platform not detected - will display as regular link</span>
                       </div>
                     )}
                     {errors.socialUrl && (
-                      <p className="text-xs text-red-500 mt-1">
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                         {errors.socialUrl}
                       </p>
                     )}
                   </div>
-                </>
+                </div>
               )}
 
               {/* E-commerce Form */}
               {linkType === "ecommerce" && (
-                <div className="space-y-2">
-                  <Label htmlFor="product-url">Product URL</Label>
-                  <Input
-                    id="product-url"
-                    type="url"
-                    placeholder="https://shopee.vn/... or https://lazada.vn/..."
-                    value={ecommerceUrl}
-                    onChange={(e) => {
-                      const url = e.target.value;
-                      setEcommerceUrl(url);
-                      // Clear error when editing
-                      if (errors.ecommerceUrl)
-                        setErrors((prev) => ({
-                          ...prev,
-                          ecommerceUrl: undefined,
-                        }));
-                      // Real-time detection
-                      if (url) {
-                        const validation = ecommerceService.validateUrl(url);
-                        setDetectedEcommercePlatform(
-                          validation.platform || null
-                        );
-                      } else {
-                        setDetectedEcommercePlatform(null);
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={errors.ecommerceUrl ? "border-red-500" : ""}
-                  />
-                  {!errors.ecommerceUrl && (
-                    <p className="text-xs text-[#676b5f]">
-                      Paste product link from Shopee or Lazada
-                    </p>
-                  )}
-                  {detectedEcommercePlatform && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
-                      <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                      Detected:{" "}
-                      {detectedEcommercePlatform.charAt(0).toUpperCase() +
-                        detectedEcommercePlatform.slice(1)}
-                    </div>
-                  )}
-                  {errors.ecommerceUrl && (
-                    <p className="text-xs text-red-500">
-                      {errors.ecommerceUrl}
-                    </p>
-                  )}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="product-url" className="text-sm font-medium text-gray-700">
+                      Product URL
+                    </Label>
+                    <Input
+                      id="product-url"
+                      type="url"
+                      placeholder="https://shopee.vn/... or https://lazada.vn/..."
+                      value={ecommerceUrl}
+                      onChange={(e) => {
+                        const url = e.target.value;
+                        setEcommerceUrl(url);
+                        if (errors.ecommerceUrl)
+                          setErrors((prev) => ({
+                            ...prev,
+                            ecommerceUrl: undefined,
+                          }));
+                        if (url) {
+                          const validation = ecommerceService.validateUrl(url);
+                          setDetectedEcommercePlatform(
+                            validation.platform || null
+                          );
+                        } else {
+                          setDetectedEcommercePlatform(null);
+                        }
+                      }}
+                      disabled={isLoading}
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.ecommerceUrl 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-orange-500 focus:border-orange-500"
+                      }`}
+                    />
+                    {!errors.ecommerceUrl && (
+                      <p className="text-xs text-gray-500">
+                        Paste product link from Shopee or Lazada
+                      </p>
+                    )}
+                    {detectedEcommercePlatform && (
+                      <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span className="font-medium">
+                          Detected: {detectedEcommercePlatform.charAt(0).toUpperCase() + detectedEcommercePlatform.slice(1)}
+                        </span>
+                      </div>
+                    )}
+                    {errors.ecommerceUrl && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                        {errors.ecommerceUrl}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Donate Form */}
               {linkType === "donate" && (
-                <>
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="donate-title">Button Title *</Label>
+                    <Label htmlFor="donate-title" className="text-sm font-medium text-gray-700">
+                      Button Title *
+                    </Label>
                     <Input
                       id="donate-title"
                       type="text"
@@ -1393,22 +1457,29 @@ export default function LinkEditor({
                             donateTitle: undefined,
                           }));
                       }}
-                      className={errors.donateTitle ? "border-red-500" : ""}
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.donateTitle 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-pink-500 focus:border-pink-500"
+                      }`}
                     />
                     {errors.donateTitle && (
-                      <p className="text-xs text-red-500">
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                         {errors.donateTitle}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="payment-method">Payment Method *</Label>
+                    <Label htmlFor="payment-method" className="text-sm font-medium text-gray-700">
+                      Payment Method *
+                    </Label>
                     <Select
                       value={donateMethod}
                       onValueChange={(value: any) => setDonateMethod(value)}
                     >
-                      <SelectTrigger id="payment-method">
+                      <SelectTrigger id="payment-method" className="h-11 rounded-lg">
                         <SelectValue placeholder="Select method" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1421,7 +1492,7 @@ export default function LinkEditor({
 
                   {donateMethod === "vietqr" ? (
                     <div className="space-y-2">
-                      <Label>QR Code Image *</Label>
+                      <Label className="text-sm font-medium text-gray-700">QR Code Image *</Label>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -1438,15 +1509,15 @@ export default function LinkEditor({
                       />
 
                       {qrImagePreview ? (
-                        <div className="relative">
+                        <div className="relative group">
                           <img
                             src={qrImagePreview}
                             alt="QR Code Preview"
-                            className="w-full h-48 object-contain bg-gray-50 rounded-lg border-2 border-[#e0e2d9]"
+                            className="w-full h-48 object-contain bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200"
                           />
                           <button
                             onClick={handleRemoveImage}
-                            className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                            className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-all shadow-lg opacity-0 group-hover:opacity-100"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -1454,30 +1525,33 @@ export default function LinkEditor({
                       ) : (
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:border-[#8129d9] hover:bg-[#f6f7f5] transition-all ${
+                          className={`w-full h-36 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-pink-50 hover:border-pink-400 ${
                             errors.donateQR
-                              ? "border-red-400"
-                              : "border-[#e0e2d9]"
+                              ? "border-red-400 bg-red-50"
+                              : "border-gray-300 bg-gray-50"
                           }`}
                         >
-                          <Upload className="w-8 h-8 text-[#676b5f]" />
-                          <p className="text-sm text-[#676b5f]">
+                          <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
+                            <Upload className="w-6 h-6 text-pink-500" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-700">
                             Click to upload QR image
                           </p>
-                          <p className="text-xs text-[#676b5f]">
+                          <p className="text-xs text-gray-500">
                             PNG, JPG, JPEG (Max 5MB)
                           </p>
                         </button>
                       )}
                       {errors.donateQR && (
-                        <p className="text-xs text-red-500">
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                           {errors.donateQR}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <Label htmlFor="payment-link">
+                      <Label htmlFor="payment-link" className="text-sm font-medium text-gray-700">
                         {donateMethod === "momo"
                           ? "Momo Payment Link"
                           : "ZaloPay Payment Link"}{" "}
@@ -1495,13 +1569,11 @@ export default function LinkEditor({
                         onChange={(e) => {
                           const link = e.target.value;
                           setDonatePaymentLink(link);
-                          // Clear error when editing
                           if (errors.donatePaymentLink)
                             setErrors((prev) => ({
                               ...prev,
                               donatePaymentLink: undefined,
                             }));
-                          // Real-time validation for detection only
                           if (link) {
                             if (donateMethod === "momo") {
                               setPaymentLinkValid(
@@ -1515,12 +1587,14 @@ export default function LinkEditor({
                             setPaymentLinkValid(null);
                           }
                         }}
-                        className={
-                          errors.donatePaymentLink ? "border-red-500" : ""
-                        }
+                        className={`h-11 rounded-lg transition-all ${
+                          errors.donatePaymentLink 
+                            ? "border-red-500 focus:ring-red-500" 
+                            : "focus:ring-pink-500 focus:border-pink-500"
+                        }`}
                       />
                       {!errors.donatePaymentLink && (
-                        <p className="text-xs text-[#676b5f]">
+                        <p className="text-xs text-gray-500">
                           {donateMethod === "momo"
                             ? "Your Momo link (opens app on mobile)"
                             : "Your ZaloPay link (opens app on mobile)"}
@@ -1528,27 +1602,31 @@ export default function LinkEditor({
                       )}
                       {paymentLinkValid === true &&
                         !errors.donatePaymentLink && (
-                          <div className="flex items-center gap-2 text-sm text-green-600">
-                            <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                            Valid {donateMethod === "momo" ? "Momo" : "ZaloPay"}{" "}
-                            link detected
+                          <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span className="font-medium">
+                              Valid {donateMethod === "momo" ? "Momo" : "ZaloPay"} link detected
+                            </span>
                           </div>
                         )}
                       {errors.donatePaymentLink && (
-                        <p className="text-xs text-red-500">
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                           {errors.donatePaymentLink}
                         </p>
                       )}
                     </div>
                   )}
-                </>
+                </div>
               )}
 
               {/* Contact Form */}
               {linkType === "contact" && (
-                <>
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="contact-title">Form Title *</Label>
+                    <Label htmlFor="contact-title" className="text-sm font-medium text-gray-700">
+                      Form Title *
+                    </Label>
                     <Input
                       id="contact-title"
                       type="text"
@@ -1562,16 +1640,23 @@ export default function LinkEditor({
                             contactTitle: undefined,
                           }));
                       }}
-                      className={errors.contactTitle ? "border-red-500" : ""}
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.contactTitle 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-blue-500 focus:border-blue-500"
+                      }`}
                     />
                     {errors.contactTitle && (
-                      <p className="text-xs text-red-500">
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                         {errors.contactTitle}
                       </p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contact-email">Your Email *</Label>
+                    <Label htmlFor="contact-email" className="text-sm font-medium text-gray-700">
+                      Your Email *
+                    </Label>
                     <Input
                       id="contact-email"
                       type="email"
@@ -1585,40 +1670,50 @@ export default function LinkEditor({
                             contactEmail: undefined,
                           }));
                       }}
-                      className={errors.contactEmail ? "border-red-500" : ""}
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.contactEmail 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-blue-500 focus:border-blue-500"
+                      }`}
                     />
                     {!errors.contactEmail && (
-                      <p className="text-xs text-[#676b5f]">
+                      <p className="text-xs text-gray-500">
                         Messages from visitors will be sent to this email
                       </p>
                     )}
                     {errors.contactEmail && (
-                      <p className="text-xs text-red-500">
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
                         {errors.contactEmail}
                       </p>
                     )}
                   </div>
-                </>
+                </div>
               )}
 
               {/* Chat Form */}
               {linkType === "chat" && (
-                <>
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="chat-title">Button Title</Label>
+                    <Label htmlFor="chat-title" className="text-sm font-medium text-gray-700">
+                      Button Title
+                    </Label>
                     <Input
                       id="chat-title"
                       type="text"
                       placeholder="Chat on Zalo"
                       value={chatTitle}
                       onChange={(e) => setChatTitle(e.target.value)}
+                      className="h-11 rounded-lg focus:ring-green-500 focus:border-green-500"
                     />
-                    <p className="text-xs text-[#676b5f]">
+                    <p className="text-xs text-gray-500">
                       Leave empty to use default title
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone-number">Zalo Phone Number *</Label>
+                    <Label htmlFor="phone-number" className="text-sm font-medium text-gray-700">
+                      Zalo Phone Number *
+                    </Label>
                     <Input
                       id="phone-number"
                       type="tel"
@@ -1632,60 +1727,85 @@ export default function LinkEditor({
                             chatPhone: undefined,
                           }));
                       }}
-                      className={errors.chatPhone ? "border-red-500" : ""}
+                      className={`h-11 rounded-lg transition-all ${
+                        errors.chatPhone 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "focus:ring-green-500 focus:border-green-500"
+                      }`}
                     />
                     {!errors.chatPhone && (
-                      <p className="text-xs text-[#676b5f]">
+                      <p className="text-xs text-gray-500">
                         10 digits starting with 0
                       </p>
                     )}
                     {errors.chatPhone && (
-                      <p className="text-xs text-red-500">{errors.chatPhone}</p>
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                        {errors.chatPhone}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="chat-message">Default Message</Label>
+                    <Label htmlFor="chat-message" className="text-sm font-medium text-gray-700">
+                      Default Message
+                    </Label>
                     <Input
                       id="chat-message"
                       type="text"
                       placeholder="Hello! I need help."
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
+                      className="h-11 rounded-lg focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
-                </>
+                </div>
               )}
 
-              <Button
-                onClick={
-                  editingBlock
-                    ? handleUpdateBlock
-                    : editingLink
-                    ? handleUpdateLink
-                    : handleAddLink
-                }
-                className="w-full bg-[#8129d9] hover:bg-[#7020c0]"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Loading...
-                  </>
-                ) : editingBlock ? (
-                  "Update Block"
-                ) : editingLink ? (
-                  linkType === "social" ? (
-                    "Update Link"
+              {/* Submit Button */}
+              <div className="pt-4">
+                <Button
+                  onClick={
+                    editingBlock
+                      ? handleUpdateBlock
+                      : editingLink
+                      ? handleUpdateLink
+                      : handleAddLink
+                  }
+                  className="w-full h-12 bg-gradient-to-r from-[#8129d9] to-[#a855f7] hover:from-[#6f23b8] hover:to-[#9333ea] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Processing...</span>
+                    </div>
+                  ) : editingBlock ? (
+                    <span className="flex items-center gap-2">
+                      <span>Update Block</span>
+                    </span>
+                  ) : editingLink ? (
+                    linkType === "social" ? (
+                      <span className="flex items-center gap-2">
+                        <span>Update Link</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <span>Update Block</span>
+                      </span>
+                    )
+                  ) : linkType === "social" ? (
+                    <span className="flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      <span>Add Link</span>
+                    </span>
                   ) : (
-                    "Update Block"
-                  )
-                ) : linkType === "social" ? (
-                  "Add Link"
-                ) : (
-                  "Add Block"
-                )}
-              </Button>
+                    <span className="flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      <span>Add Block</span>
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -1694,9 +1814,9 @@ export default function LinkEditor({
         <div className="space-y-3">
           {unifiedItems.length === 0 ? (
             <EmptyState
-              title="Chưa có link nào"
-              description="Hãy tạo link đầu tiên của bạn để bắt đầu chia sẻ với thế giới"
-              actionLabel="Tạo link ngay"
+              title="No links yet"
+              description="Create your first link to start sharing with the world"
+              actionLabel="Create link"
               onAction={() => setIsDialogOpen(true)}
             />
           ) : (
@@ -1708,7 +1828,7 @@ export default function LinkEditor({
                   return (
                     <div
                       key={`link-${link.id}`}
-                      className="bg-white rounded-xl p-4 border border-[#e6e9ed] hover:border-[#8129d9] hover:shadow-md transition-all duration-200 group"
+                      className="bg-gradient-to-br from-white to-gray-50/50 rounded-2xl p-4 border-2 border-gray-200/60 shadow-sm hover:shadow-xl hover:border-purple-300 hover:-translate-y-0.5 transition-all duration-300 group backdrop-blur-sm"
                       draggable
                       onDragStart={(e) => {
                         setDraggedItem({ id: link.id, type: "link" });
@@ -1827,7 +1947,7 @@ export default function LinkEditor({
                   return (
                     <div
                       key={`block-${block.id}`}
-                      className="bg-white rounded-xl p-4 border border-[#e6e9ed] hover:border-[#8129d9] hover:shadow-md transition-all duration-200 group"
+                      className="bg-gradient-to-br from-white to-gray-50/50 rounded-2xl p-4 border-2 border-gray-200/60 shadow-sm hover:shadow-xl hover:border-purple-300 hover:-translate-y-0.5 transition-all duration-300 group backdrop-blur-sm"
                       draggable
                       onDragStart={(e) => {
                         setDraggedItem({ id: block.id, type: "block" });
